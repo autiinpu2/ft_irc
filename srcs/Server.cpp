@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/18 09:52:41 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/18 10:04:15 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -84,7 +84,6 @@ int Server::serv_loop(void) {
 		for (size_t i = 0; i < client_fds.size(); ++i) {
 			if (client_fds[i] > 0 && FD_ISSET(client_fds[i], &rfds)) {
 				char buffer[1024];
-				memset(buffer, 0, 1024);
 				int bytes_read = recv(client_fds[i], buffer, 1023, 0);
 				
 				if (bytes_read <= 0) {

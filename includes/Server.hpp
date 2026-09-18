@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/18 09:21:58 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/18 09:57:14 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 # include <cstring>
 # include <exception>
 # include <vector>
+# include <map>
 
 class Server {
 	private:
