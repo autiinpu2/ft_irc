@@ -83,7 +83,7 @@ int create_server(int port)
 					close(client_fd);
 					client_fds[i] = 0;
 					connected_cli--;
-					std::cout << "\033[1;31mClient disconnected. (FD: " << client_fd << ") Remaining: " << \033[1;37m" << std::endl;
+					std::cout << "\033[1;31mClient disconnected. (FD: " << client_fd << ") Remaining: " << connected_cli << "\033[1;37m" << std::endl;
 				} else {
 					std::cout << "\033[1;33mReceived: " << buffer << "\033[1;37m" << std::endl;
 					send(client_fd, buffer, bytes_read, 0);
