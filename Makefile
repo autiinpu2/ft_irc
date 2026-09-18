@@ -5,14 +5,14 @@ RM          := rm -rf
 MAKE        := make --no-print-directory
 
 OBJ_DIR     := build
-SRC_DIR     := .
+SRC_DIR     := srcs
 
-SRC_MAIN_DIR    := $(SRC_DIR)
-SRC_MAIN        := main.cpp
+SRCS_DIR    := $(SRC_DIR)
+SRCS      := main.cpp Server.cpp
 
-SRCS        := $(addprefix $(SRC_MAIN_DIR)/, $(SRC_MAIN))
+SRCS        := $(addprefix $(SRCS_DIR)/, $(SRCS))
 
-OBJS        := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+OBJS        := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRCS))
 
 all: $(NAME)
 
@@ -20,7 +20,7 @@ $(NAME): $(OBJS)
 	@$(CC) $(CFLAGS) $(LDFLAGS) $(OBJS) -o $(NAME)
 	@echo "\033[1;32m$(NAME) created.\033[0m"
 
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
 	@$(CC) $(CFLAGS) -c $< -o $@
 
