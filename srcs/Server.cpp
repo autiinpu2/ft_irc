@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/18 10:04:15 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/21 22:49:17 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,7 +33,9 @@ Server::Server(long port, const std::string &password) :  _nbc(0), _port(port), 
 			throw std::runtime_error("listening fd failed");
 }
 
-Server::~Server() {}; 
+Server::~Server() {
+	close(Server::_fd);
+}; 
 
 Server &Server::getInstance(long port, std::string const& password)
 {
@@ -57,8 +59,12 @@ const std::string &Server::getPassword(void) const {
 
 int Server::serv_loop(void) {
 	std::vector<int> client_fds;
-	
+	signal(SIGINT, handle_signal);
+
+	std::cout << "\033[1;32mServer ON\n\033[1;32m" << std::endl;
 	while (true) {
+		if (signalstatus == SIGINT)
+			break;
 		fd_set rfds;
 		FD_ZERO(&rfds);
 		FD_SET(Server::_fd, &rfds);
@@ -67,13 +73,16 @@ int Server::serv_loop(void) {
 		for (size_t i = 0; i < client_fds.size(); ++i) {
 			FD_SET(client_fds[i], &rfds);
 			if (client_fds[i] > max_fd)
-				max_fd = client_fds[i];
+			max_fd = client_fds[i];
+		}
+		int ret = select(max_fd + 1, &rfds, NULL, NULL, NULL);
+		if (ret == -1) {
+			if (errno == EINTR)
+				break;
+			return 1;
 		}
 
-		if (select(max_fd + 1, &rfds, NULL, NULL, NULL) == -1)
-			return 1;
-
-		if (FD_ISSET(Server::_fd, &rfds)) {
+			if (FD_ISSET(Server::_fd, &rfds)) {
 			int new_client = accept(Server::_fd, NULL, NULL);
 			if (new_client >= 0) {
 				client_fds.push_back(new_client);
@@ -87,16 +96,22 @@ int Server::serv_loop(void) {
 				int bytes_read = recv(client_fds[i], buffer, 1023, 0);
 				
 				if (bytes_read <= 0) {
+					close(client_fds[i]);
+					std::cout << "\033[1;31mClient disconnected. (FD: " << client_fds[i] << ") Remaining: " << Server::_nbc << "\033[1;37m" << std::endl;
 					client_fds.erase(client_fds.begin() + i);
 					Server::_nbc--;
-					std::cout << "\033[1;31mClient disconnected. (FD: " << client_fds[i] << ") Remaining: " << Server::_nbc << "\033[1;37m" << std::endl;
-				} 
+					--i;
+				}
 				else {
 					std::cout << "\033[1;33mReceived: " << buffer << "\033[1;37m" << std::endl;
 					send(client_fds[i], buffer, bytes_read, 0);
+					bzero(buffer, 1024);
 				}
 			}
 		}
 	}
+	for (size_t i = 0; i < client_fds.size(); ++i)
+		close(client_fds[i]);
+	std::cout << "\033[1;31m\nServer OFF\033[1;31m" << std::endl;
 	return 0;
 }

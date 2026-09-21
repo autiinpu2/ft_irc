@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/18 09:57:14 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/21 22:30:25 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,9 @@
 # include <exception>
 # include <vector>
 # include <map>
+# include <csignal>
+
+# include "signal.hpp"
 
 class Server {
 	private:
@@ -42,4 +45,3 @@ class Server {
 		int serv_loop(void);
 		
 };
-
