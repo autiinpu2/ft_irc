@@ -3,14 +3,15 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/18 10:04:15 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/21 23:12:57 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
+#include <sys/socket.h>
 
 Server* Server::_instance = NULL;
 
@@ -55,7 +56,40 @@ const std::string &Server::getPassword(void) const {
 	return Server::_password;
 }
 
-int Server::serv_loop(void) {
+void process_entry(const std::string& rawData, std::string password, int fd_client) {
+	std::stringstream stream(rawData);
+	std::string line;
+
+	while (std::getline(stream, line)) {
+		if (line.empty()) {
+			continue;
+		}
+		if (line[line.length() - 1] == '\r') {
+			line.erase(line.length() - 1);
+		}
+
+		std::stringstream lineStream(line);
+		std::string command;
+		lineStream >> command;
+		
+		std::cout << "Commande IRC : [" << command << "]" << std::endl;
+
+		if (command == "PASS") {
+			std::string pass;
+			lineStream >> pass;
+			if (password == pass)
+				std::cout << "Password good" << std::endl;
+			else {
+				std::cout << "Password not good" << std::endl;
+				char msg[45] = ":serveur.irc.com 464 * :Password incorrect\r\n";
+				send(fd_client, msg, 45, 0);
+				close(fd_client);
+			}
+		}
+	}
+}
+
+int Server::serv_loop() {
 	std::vector<int> client_fds;
 	
 	while (true) {
@@ -85,6 +119,7 @@ int Server::serv_loop(void) {
 			if (client_fds[i] > 0 && FD_ISSET(client_fds[i], &rfds)) {
 				char buffer[1024];
 				int bytes_read = recv(client_fds[i], buffer, 1023, 0);
+				buffer[bytes_read] = '\0';
 				
 				if (bytes_read <= 0) {
 					client_fds.erase(client_fds.begin() + i);
@@ -92,8 +127,8 @@ int Server::serv_loop(void) {
 					std::cout << "\033[1;31mClient disconnected. (FD: " << client_fds[i] << ") Remaining: " << Server::_nbc << "\033[1;37m" << std::endl;
 				} 
 				else {
-					std::cout << "\033[1;33mReceived: " << buffer << "\033[1;37m" << std::endl;
-					send(client_fds[i], buffer, bytes_read, 0);
+					process_entry(buffer, Server::_password, client_fds[i]);
+					// send(client_fds[i], buffer, bytes_read, 0);
 				}
 			}
 		}

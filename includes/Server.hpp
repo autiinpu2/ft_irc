@@ -3,17 +3,19 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/18 09:57:14 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/21 22:11:26 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once 
 
+#include <string>
 # include <cstdlib>
 # include <ctime>
+#include <sstream>
 # include <iostream>
 # include <sys/socket.h>
 # include <netinet/in.h>
