@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 05:05:31 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 06:01:30 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,6 +26,7 @@
 # include <csignal>
 # include <string>
 # include <sstream>
+# include <fcntl.h>
 
 # include "signal.hpp"
 
@@ -55,8 +56,9 @@ class Server {
 		void	setNbClient(int nb);
 
 		void	cmd_pass(std::string pass, Client *c);
+		void	cmd_ping(std::string arg, Client *c);
 		
 		fd_set	init_rfds(std::vector<Client*> clients);
-		int		init_client(fd_set &rfds, std::vector<Client*> clients);
-		void	init_buffer(fd_set &rfds, std::vector<Client*> clients);
+		int		init_client(fd_set &rfds, std::vector<Client*> &clients);
+		void	init_buffer(fd_set &rfds, std::vector<Client*> &clients);
 };

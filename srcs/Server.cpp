@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 05:17:11 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 06:29:13 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,6 @@ Server::Server(long port, const std::string &password) :  nb_clients(0), serv_po
 	struct sockaddr_in sock;
 	struct in_addr addr;
 
-	(void)Server::nb_clients;
 	sock.sin_port = htons(Server::serv_port);
 	sock.sin_family = AF_INET;
 	if (!inet_aton("0.0.0.0", &addr))
@@ -28,7 +27,13 @@ Server::Server(long port, const std::string &password) :  nb_clients(0), serv_po
 	sock.sin_addr = addr;
 	Server::serv_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (Server::serv_socket < 0)
-			throw std::runtime_error("socket init failed");
+		throw std::runtime_error("socket init failed");
+	int opt = 1;
+    if (setsockopt(Server::serv_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+            throw std::runtime_error("setsockopt failed");
+	
+	if (fcntl(Server::serv_socket, F_SETFL, O_NONBLOCK) == -1)
+        throw std::runtime_error("fcntl failed on server fd");
 	if (bind(Server::serv_socket, (struct sockaddr *)&sock, sizeof(sockaddr_in)))
 			throw std::runtime_error("bind failed");
 	if (listen(Server::serv_socket, 10) == -1)
@@ -89,6 +94,8 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 		lineStream >> arg;
 		if (command == "PASS")
 			cmd_pass(arg, c);
+		else if (command == "PING")
+			cmd_ping(arg, c);
 	}
 }
 
@@ -97,9 +104,15 @@ void Server::cmd_pass(std::string pass, Client *c) {
 		c->setStatus(true);
 	}
 	else {
-		char msg[45] = ":serveur.irc.com 464 * :Password incorrect\r\n";
+		char msg[45] = "::localhost 464 * :Password incorrect\r\n";
 		send(c->getFd(), msg, 45, 0);
 	}
+}
+
+void Server::cmd_ping(std::string arg, Client *c) {
+	std::string msg = ":localhost PONG * :" + arg + "\r\n";
+	
+	send(c->getFd(), msg.c_str(), strlen(msg.c_str()), 0);
 }
 
 fd_set Server::init_rfds(std::vector<Client*> clients) {
@@ -111,12 +124,12 @@ fd_set Server::init_rfds(std::vector<Client*> clients) {
 	return rfds;
 }
 
-int	Server::init_client(fd_set &rfds, std::vector<Client*> clients) {
+int	Server::init_client(fd_set &rfds, std::vector<Client*> &clients) {
 	if (FD_ISSET(Server::serv_socket, &rfds)) {
 		try {
 			Client *c = new Client();
 			if (c->getFd() >= 0) {
-				FD_SET(c->getFd(), &rfds);
+				// FD_SET(c->getFd(), &rfds);
 				clients.push_back(c);
 				std::cout << "\033[1;32mNew client connected! (FD: " << c->getFd() << ")" << std::endl;
 				Server::nb_clients++;
@@ -129,16 +142,16 @@ int	Server::init_client(fd_set &rfds, std::vector<Client*> clients) {
 			return -1;
 		}
 	}
-	return -1;
+	return 0;
 }
 
-void	Server::init_buffer(fd_set &rfds, std::vector<Client*> clients) {
-			std::cout << "coucou" << std::endl;
+void	Server::init_buffer(fd_set &rfds, std::vector<Client*> &clients) {
 	for (size_t i = 0; i < clients.size(); ++i) {			
 		if (clients[i]->getFd() > 0 && FD_ISSET(clients[i]->getFd(), &rfds)) {
 			char buffer[1024];
-			int bytes_read = recv(clients[i]->getFd(), buffer, 1023, MSG_DONTWAIT); 
-				
+			buffer[0] = 't';
+			int bytes_read = recv(clients[i]->getFd(), buffer, 1023, 0);
+			
 			if (bytes_read <= 0) {
 				Server::getInstance().setNbClient(-1);
 				std::cout << "\033[1;31mClient disconnected. (FD: " << clients[i]->getFd() << ") Remaining: " << Server::getInstance().getNbClient() << "\033[1;37m" << std::endl;
@@ -176,7 +189,6 @@ int Server::serv_loop(void) {
 
 		if (init_client(rfds, clients) == -1)
 			return -1;
-		std::cout << "coucou" << std::endl;
 		init_buffer(rfds, clients); 
 	}
 	for (size_t i = 0; i < clients.size(); ++i) {
