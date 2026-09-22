@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 02:42:22 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 05:05:31 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,24 +33,30 @@ class Client;
 
 class Server {
 	private:
-		static Server* _instance;
+		static	Server* _instance;
 		Server(long port, const std::string &password);
 		
-		int serv_socket;
-		int nb_clients;
-		long serv_port; 
-		const std::string serv_password;
+		int		serv_socket;
+		int		nb_clients;
+		long	serv_port; 
+		const	std::string serv_password;
 	public:
 		~Server();
-		static Server &getInstance(long port = 0, const std::string &password = "");
-	   	static void	destroyInstance(void);
+		static	Server	&getInstance(long port = 0, const std::string &password = "");
+	   	static	void	destroyInstance(void);
 		
-		int serv_loop(void);
+		int		serv_loop(void);
+		void	handle_tokens(const std::string &buffer, Client *c);
 		   
-		const std::string &getPassword(void) const;
-		long getPort(void) const;
-		int getSocket(void) const;
+		const	std::string &getPassword(void) const;
+		long	getPort(void) const;
+		int		getSocket(void) const;
+		int		getNbClient(void) const;
+		void	setNbClient(int nb);
 
-		void handle_tokens(const std::string &buffer, Client &c);
-		void cmd_pass(std::string pass, Client &c);
+		void	cmd_pass(std::string pass, Client *c);
+		
+		fd_set	init_rfds(std::vector<Client*> clients);
+		int		init_client(fd_set &rfds, std::vector<Client*> clients);
+		void	init_buffer(fd_set &rfds, std::vector<Client*> clients);
 };

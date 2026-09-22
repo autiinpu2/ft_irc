@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 04:17:22 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 05:17:11 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,7 +63,15 @@ int Server::getSocket(void) const {
 	return Server::serv_socket;
 }
 
-void Server::handle_tokens(const std::string &buffer, Client &c) {
+int Server::getNbClient(void) const {
+	return Server::nb_clients;
+}
+
+void	Server::setNbClient(int nb){
+	Server::nb_clients = Server::nb_clients + nb;
+}
+
+void Server::handle_tokens(const std::string &buffer, Client *c) {
 	std::stringstream stream(buffer);
 	std::string line;
 	std::string arg;
@@ -84,74 +92,92 @@ void Server::handle_tokens(const std::string &buffer, Client &c) {
 	}
 }
 
-void Server::cmd_pass(std::string pass, Client &c) {
+void Server::cmd_pass(std::string pass, Client *c) {
 	if (pass == Server::serv_password) {
-		c.setStatus(true);
+		c->setStatus(true);
 	}
 	else {
 		char msg[45] = ":serveur.irc.com 464 * :Password incorrect\r\n";
-		send(c.getFd(), msg, 45, 0);
+		send(c->getFd(), msg, 45, 0);
+	}
+}
+
+fd_set Server::init_rfds(std::vector<Client*> clients) {
+	fd_set rfds;
+	FD_ZERO(&rfds);
+	FD_SET(Server::serv_socket, &rfds);
+	for (size_t i = 0; i < clients.size(); ++i)
+		FD_SET(clients[i]->getFd(), &rfds);
+	return rfds;
+}
+
+int	Server::init_client(fd_set &rfds, std::vector<Client*> clients) {
+	if (FD_ISSET(Server::serv_socket, &rfds)) {
+		try {
+			Client *c = new Client();
+			if (c->getFd() >= 0) {
+				FD_SET(c->getFd(), &rfds);
+				clients.push_back(c);
+				std::cout << "\033[1;32mNew client connected! (FD: " << c->getFd() << ")" << std::endl;
+				Server::nb_clients++;
+				return 0;
+			}
+			return -1;
+		} 
+		catch (std::runtime_error &e){
+			std::cerr << e.what() << std::endl;
+			return -1;
+		}
+	}
+	return -1;
+}
+
+void	Server::init_buffer(fd_set &rfds, std::vector<Client*> clients) {
+			std::cout << "coucou" << std::endl;
+	for (size_t i = 0; i < clients.size(); ++i) {			
+		if (clients[i]->getFd() > 0 && FD_ISSET(clients[i]->getFd(), &rfds)) {
+			char buffer[1024];
+			int bytes_read = recv(clients[i]->getFd(), buffer, 1023, MSG_DONTWAIT); 
+				
+			if (bytes_read <= 0) {
+				Server::getInstance().setNbClient(-1);
+				std::cout << "\033[1;31mClient disconnected. (FD: " << clients[i]->getFd() << ") Remaining: " << Server::getInstance().getNbClient() << "\033[1;37m" << std::endl;
+				delete clients[i];
+				clients.erase(clients.begin() + i);
+				--i;
+			}
+			else {
+				buffer[bytes_read] = '\0';
+				Server::getInstance().handle_tokens(buffer, clients[i]);
+				std::cout << "\033[1;33mReceived: " << buffer << "\033[1;37m" << std::endl;
+				bzero(buffer, 1024);
+			}
+		}
 	}
 }
 
 int Server::serv_loop(void) {
 	std::vector<Client*> clients;
 	signal(SIGINT, handle_signal);
-	
 
 	std::cout << "\033[1;92mServer ON\n\033[m" << std::endl;
 	while (true) {
 		if (signalstatus == SIGINT)
 			break;
 		
-		fd_set rfds;
-		FD_ZERO(&rfds);
-		FD_SET(Server::serv_socket, &rfds);
-		for (size_t i = 0; i < clients.size(); ++i)
-			FD_SET(clients[i]->getFd(), &rfds);
+		fd_set rfds = init_rfds(clients);
 		
 		int ret = select(max_fd(clients)+ 1, &rfds, NULL, NULL, NULL);
 		if (ret == -1) {
 			if (errno == EINTR)
 				break;
-			return 1;
+			return -1;
 		}
 
-		if (FD_ISSET(Server::serv_socket, &rfds)) {
-			try {
-				Client *c = new Client();
-				if (c->getFd() >= 0) {
-					FD_SET(c->getFd(), &rfds);
-					clients.push_back(c);
-					std::cout << "\033[1;32mNew client connected! (FD: " << c->getFd() << ")" << std::endl;
-					Server::nb_clients++;
-				}
-			} 
-			catch (std::runtime_error &e){
-				std::cerr << e.what() << std::endl;
-				return 1;
-			}
-		}
-		for (size_t i = 0; i < clients.size(); ++i) {			
-			if (clients[i]->getFd() > 0 && FD_ISSET(clients[i]->getFd(), &rfds)) {
-				char buffer[1024];
-				int bytes_read = recv(clients[i]->getFd(), buffer, 1023, 0); 
-				
-				if (bytes_read <= 0) {
-					Server::nb_clients--;
-					std::cout << "\033[1;31mClient disconnected. (FD: " << clients[i]->getFd() << ") Remaining: " << Server::nb_clients << "\033[1;37m" << std::endl;
-					delete clients[i];
-					clients.erase(clients.begin() + i);
-					--i;
-				}
-				else {
-					buffer[bytes_read] = '\0';
-					handle_tokens(buffer, *(clients[i]));
-					std::cout << "\033[1;33mReceived: " << buffer << "\033[1;37m" << std::endl;
-					bzero(buffer, 1024);
-				}
-			}
-		}
+		if (init_client(rfds, clients) == -1)
+			return -1;
+		std::cout << "coucou" << std::endl;
+		init_buffer(rfds, clients); 
 	}
 	for (size_t i = 0; i < clients.size(); ++i) {
 		delete clients[i];
