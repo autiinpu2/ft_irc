@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:23:46 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 04:11:39 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 04:28:11 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@ Client::Client(void) {
 	this->fd = accept(Server::getInstance().getSocket(), NULL, NULL);
 	if (this->fd < 0)
 		throw std::runtime_error("fd accept failed");
-	this->authenticated = false;
+	this->islog = false;
 }
 
 Client::~Client(){
@@ -29,9 +29,9 @@ int Client::getFd(void) const {
 }
 
 void  Client::setStatus(bool status) {
-	this->authenticated = status;
+	this->islog = status;
 }
 
 bool  Client::getStatus(void) const {
-	return this->authenticated;
+	return this->islog;
 }
