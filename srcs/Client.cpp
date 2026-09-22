@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:23:46 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 01:30:49 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 04:11:39 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,11 +20,18 @@ Client::Client(void) {
 	this->authenticated = false;
 }
 
-Client::~Client() {
+Client::~Client(){
 	close(this->fd);
-	delete this;
 }
 
 int Client::getFd(void) const {
 	return this->fd;
+}
+
+void  Client::setStatus(bool status) {
+	this->authenticated = status;
+}
+
+bool  Client::getStatus(void) const {
+	return this->authenticated;
 }

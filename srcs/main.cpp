@@ -6,11 +6,12 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 05:20:22 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 00:10:33 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 02:34:40 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
+#include "Client.hpp"
 
 static long parsing(int ac, char **av) {
 	char *endptr;

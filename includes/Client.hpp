@@ -6,13 +6,11 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:20:13 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 01:38:11 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 03:05:36 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
-
-# include "Server.hpp"
 
 class Client {
 	private:
@@ -23,5 +21,6 @@ class Client {
 		~Client();
 	
 	int getFd(void) const;
-	void setStatus(void);
+	void setStatus(bool status);
+	bool getStatus(void) const;
 };

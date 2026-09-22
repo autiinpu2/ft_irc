@@ -6,13 +6,13 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 01:37:26 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 04:17:22 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
-#include "Client.hpp"
 #include "utils.cpp"
+#include "Client.hpp"
 
 Server* Server::_instance = NULL;
 
@@ -63,7 +63,7 @@ int Server::getSocket(void) const {
 	return Server::serv_socket;
 }
 
-void Server::handle_tokens(const std::string &buffer, int fd_client) {
+void Server::handle_tokens(const std::string &buffer, Client &c) {
 	std::stringstream stream(buffer);
 	std::string line;
 	std::string arg;
@@ -78,32 +78,28 @@ void Server::handle_tokens(const std::string &buffer, int fd_client) {
 		std::string command;
 		lineStream >> command;
 		
-		std::cout << "Commande IRC : [" << command << "]" << std::endl;
 		lineStream >> arg;
 		if (command == "PASS")
-			cmd_PASS(arg, fd_client);
+			cmd_pass(arg, c);
 	}
 }
 
-void Server::cmd_PASS(std::string pass, Client c) {
+void Server::cmd_pass(std::string pass, Client &c) {
 	if (pass == Server::serv_password) {
-		c.authenticated = false;
-		std::cout << "Password good" << std::endl;
+		c.setStatus(true);
 	}
 	else {
-		std::cout << "Password not good" << std::endl;
 		char msg[45] = ":serveur.irc.com 464 * :Password incorrect\r\n";
-		send(fd_client, msg, 45, 0);
-		close(fd_client);
+		send(c.getFd(), msg, 45, 0);
 	}
 }
 
 int Server::serv_loop(void) {
-	std::vector<Client> clients;
+	std::vector<Client*> clients;
 	signal(SIGINT, handle_signal);
 	
 
-	std::cout << "\033[1;32mServer ON\n\033[1;32m" << std::endl;
+	std::cout << "\033[1;92mServer ON\n\033[m" << std::endl;
 	while (true) {
 		if (signalstatus == SIGINT)
 			break;
@@ -112,7 +108,7 @@ int Server::serv_loop(void) {
 		FD_ZERO(&rfds);
 		FD_SET(Server::serv_socket, &rfds);
 		for (size_t i = 0; i < clients.size(); ++i)
-			FD_SET(clients[i].getFd(), &rfds);
+			FD_SET(clients[i]->getFd(), &rfds);
 		
 		int ret = select(max_fd(clients)+ 1, &rfds, NULL, NULL, NULL);
 		if (ret == -1) {
@@ -126,7 +122,7 @@ int Server::serv_loop(void) {
 				Client *c = new Client();
 				if (c->getFd() >= 0) {
 					FD_SET(c->getFd(), &rfds);
-					clients.push_back(*c);
+					clients.push_back(c);
 					std::cout << "\033[1;32mNew client connected! (FD: " << c->getFd() << ")" << std::endl;
 					Server::nb_clients++;
 				}
@@ -136,27 +132,29 @@ int Server::serv_loop(void) {
 				return 1;
 			}
 		}
-		
 		for (size_t i = 0; i < clients.size(); ++i) {			
-			if (clients[i].getFd() > 0 && FD_ISSET(clients[i].getFd(), &rfds)) {
+			if (clients[i]->getFd() > 0 && FD_ISSET(clients[i]->getFd(), &rfds)) {
 				char buffer[1024];
-				int bytes_read = recv(clients[i].getFd(), buffer, 1023, 0); 
+				int bytes_read = recv(clients[i]->getFd(), buffer, 1023, 0); 
 				
 				if (bytes_read <= 0) {
 					Server::nb_clients--;
-					std::cout << "\033[1;31mClient disconnected. (FD: " << clients[i].getFd() << ") Remaining: " << Server::nb_clients << "\033[1;37m" << std::endl;
+					std::cout << "\033[1;31mClient disconnected. (FD: " << clients[i]->getFd() << ") Remaining: " << Server::nb_clients << "\033[1;37m" << std::endl;
+					delete clients[i];
 					clients.erase(clients.begin() + i);
 					--i;
 				}
 				else {
 					buffer[bytes_read] = '\0';
-					handle_tokens(buffer, clients[i]);
+					handle_tokens(buffer, *(clients[i]));
 					std::cout << "\033[1;33mReceived: " << buffer << "\033[1;37m" << std::endl;
-					send(clients[i].getFd(), buffer, bytes_read, 0);
 					bzero(buffer, 1024);
 				}
 			}
 		}
+	}
+	for (size_t i = 0; i < clients.size(); ++i) {
+		delete clients[i];
 	}
 	std::cout << "\033[1;31m\nServer OFF\033[1;31m" << std::endl;
 	return 0;

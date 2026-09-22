@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 01:34:54 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 02:42:22 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,6 +29,8 @@
 
 # include "signal.hpp"
 
+class Client;
+
 class Server {
 	private:
 		static Server* _instance;
@@ -49,6 +51,6 @@ class Server {
 		long getPort(void) const;
 		int getSocket(void) const;
 
-		void handle_tokens(const std::string &buffer, int fd_client);
-		void cmd_PASS(std::string pass, Client c);
+		void handle_tokens(const std::string &buffer, Client &c);
+		void cmd_pass(std::string pass, Client &c);
 };
