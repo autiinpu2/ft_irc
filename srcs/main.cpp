@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 05:20:22 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/21 22:21:40 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/22 00:10:33 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,17 +32,14 @@ int main(int ac, char **av) {
 	if (port == -1)
 		return 1;
 	std::string password = av[2];
-	try
-	{
+	try {
 		Server &server = Server::getInstance(port, password);
 		server.serv_loop();
 		
-	}
-	catch (std::runtime_error e) {
+	} catch (std::runtime_error e) {
 		std::cerr << e.what() << std::endl;
 		return 1;
 	}
-
 	Server::destroyInstance();
 	return 0;
 }
