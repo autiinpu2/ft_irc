@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 06:29:13 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 00:22:58 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,20 +92,30 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 		lineStream >> command;
 		
 		lineStream >> arg;
-		if (command == "PASS")
+		if (command == "PASS" && c->getStatus() == false)
 			cmd_pass(arg, c);
-		else if (command == "PING")
-			cmd_ping(arg, c);
+		else if (c->getStatus() == true) {
+			if (command == "PING")
+				cmd_ping(arg, c);	
+		}
+		else {
+			std::string msg = ":You have not registered\r\n";
+			send(c->getFd(), msg.c_str(), 27, 0);
+		}
+			
 	}
 }
 
 void Server::cmd_pass(std::string pass, Client *c) {
 	if (pass == Server::serv_password) {
 		c->setStatus(true);
+		std::string msg = "::localhost 464 * :Password correct\r\n";
+		send(c->getFd(), msg.c_str(), 38, 0);
+		std::cout << "New client logged" << std::endl;
 	}
 	else {
-		char msg[45] = "::localhost 464 * :Password incorrect\r\n";
-		send(c->getFd(), msg, 45, 0);
+		std::string msg = "::localhost 464 * :Password incorrect\r\n";
+		send(c->getFd(), msg.c_str(), 40, 0);
 	}
 }
 
@@ -130,6 +140,8 @@ int	Server::init_client(fd_set &rfds, std::vector<Client*> &clients) {
 			Client *c = new Client();
 			if (c->getFd() >= 0) {
 				// FD_SET(c->getFd(), &rfds);
+				std::cout << c->getFd() << std::endl;
+				std::cout << &rfds << std::endl;
 				clients.push_back(c);
 				std::cout << "\033[1;32mNew client connected! (FD: " << c->getFd() << ")" << std::endl;
 				Server::nb_clients++;
