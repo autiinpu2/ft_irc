@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:20:13 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 00:48:18 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 04:03:12 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ class Client {
 		int fd;
 		std::string _nickname;
 		std::string _username;
+		std::string _real_name;
 		LOG_STATUS islog;
 	public:
 		Client(void);
@@ -36,7 +37,9 @@ class Client {
 	void setStatus(LOG_STATUS status);
 	void setNickname(std::string nick);
 	void setUsername(std::string user);
+	void setRealname(std::string name);
 	LOG_STATUS getStatus(void) const;
 	std::string getNickname(void) const;
 	std::string getUsername(void) const;
+	std::string getRealname(void) const;
 };

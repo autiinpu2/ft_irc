@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 02:12:47 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 04:04:55 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,28 +91,28 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 		lineStream >> command;
 		
 		std::vector<std::string> arg;
-        std::string token;
+		std::string token;
 		
 		while (lineStream >> token) {
-            if (token[0] == ':') {
-                token.erase(0, 1);
-                
-                std::string restOfLine;
-                std::getline(lineStream, restOfLine);
-                
-                token += restOfLine;
-                arg.push_back(token);
-                break;
-            } else {
-                arg.push_back(token);
-            }
-        }
+			if (token[0] == ':') {
+				token.erase(0, 1);
+				
+				std::string restOfLine;
+				std::getline(lineStream, restOfLine);
+				
+				token += restOfLine;
+				arg.push_back(token);
+				break;
+			} else {
+				arg.push_back(token);
+			}
+		}
 		if (command == "PASS" && c->getStatus() == NONE)
 			cmd_pass(arg, c);
-		else if (command == "NICK" && c->getStatus() == PASSWORD)
+		else if (command == "NICK" && (c->getStatus() == PASSWORD || c->getStatus() == USERNAME))
 			cmd_nick(arg, c, false);
-		// else if (command == "USER" && c->getStatus() == NICKNAME)
-		// 	cmd_user(arg, c);
+		else if (command == "USER" && (c->getStatus() == PASSWORD || c->getStatus() == NICKNAME))
+			cmd_user(arg, c);
 		else if (c->getStatus() == FULL) {
 			if (command == "PING")
 				cmd_ping(arg, c);
@@ -122,7 +122,7 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 			// 	cmd_user(arg, c, true);
 		}
 		else {
-			std::string msg = ":You have not registered\r\n";
+			std::string msg = ":localhost 451 * :You have not registered\r\n";
 			send(c->getFd(), msg.c_str(), msg.length(), 0);
 		}
 	}
@@ -130,14 +130,12 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 
 void Server::cmd_pass(std::vector<std::string> arg, Client *c) {
 	if (arg.empty()) {
-        std::string err = ":localhost 461 * :No password given\r\n";
-        send(c->getFd(), err.c_str(), err.length(), 0);
-        return;
-    }
+		std::string err = ":localhost 461 * :No password given\r\n";
+		send(c->getFd(), err.c_str(), err.length(), 0);
+		return;
+	}
 	if (arg[0] == Server::serv_password) {
 		c->setStatus(PASSWORD);
-		std::string msg = "Password correct\r\n";
-		send(c->getFd(), msg.c_str(), msg.length(), 0);
 		std::cout << "New client logged" << std::endl;
 	}
 	else {
@@ -147,13 +145,18 @@ void Server::cmd_pass(std::vector<std::string> arg, Client *c) {
 }
 
 void Server::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) {
-	(void)c;
+	if (nick.empty()) {
+		std::string err = ":localhost 431 * :No nickname given\r\n";
+		send(c->getFd(), err.c_str(), err.length(), 0);
+		return;
+	}
 	std::vector<std::string>::iterator it = std::find(Server::_used_nicknames.begin(), Server::_used_nicknames.end(), nick[0]);
 
 	if (it != Server::_used_nicknames.end()) {
-		std::string msg = ":localhost 433 * " + nick[0] + " :Nickname is already in use\r\n";
+		std::string msg = ":localhost 433 " + c->getNickname() + " " + nick[0] + " :Nickname is already in use\r\n";
 		send(c->getFd(), msg.c_str(), msg.length(), 0);
-	} else {
+	}
+	else {
 		if (is_logged) {
 			std::string old_nick = c->getNickname();
 			if (!old_nick.empty()) {
@@ -161,16 +164,46 @@ void Server::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) 
 				if (it_old != Server::_used_nicknames.end())
 					Server::_used_nicknames.erase(it_old);
 			}
+			std::string success_msg = ":" + old_nick + "!user@localhost NICK :" + nick[0] + "\r\n";
+				send(c->getFd(), success_msg.c_str(), success_msg.length(), 0);
+		}
+		if (c->getStatus() == USERNAME) {
+			c->setStatus(FULL);
+			std::string welcome = ":localhost 001 " + c->getNickname() + " :Welcome to the IRC Network\r\n";
+			send(c->getFd(), welcome.c_str(), welcome.length(), 0);
+		}
+		else {
+			c->setStatus(NICKNAME);
 		}
 		Server::_used_nicknames.push_back(nick[0]);
 		c->setNickname(nick[0]);
-		c->setStatus(NICKNAME);
 	}
 }
 
-// void Server::cmd_user(std::vector<std::string> user, Client *c) {
-	
-// }
+void Server::cmd_user(std::vector<std::string> arg, Client *c) {
+	if (arg.size() < 4) {
+		std::string err = ":localhost 461 * USER :Not enough parameters\r\n";
+		send(c->getFd(), err.c_str(), err.length(), 0);
+		return;
+	}
+
+	if (c->getStatus() == FULL || c->getStatus() == USERNAME) {
+		std::string err = ":localhost 462 " + c->getNickname() + " :You may not reregister\r\n";
+		send(c->getFd(), err.c_str(), err.length(), 0);
+		return;
+	}
+
+	c->setUsername(arg[0]);
+	c->setRealname(arg[3]);
+
+	if (c->getStatus() == NICKNAME) {
+		c->setStatus(FULL);
+		std::string welcome = ":localhost 001 " + c->getNickname() + " :Welcome to the IRC Network\r\n";
+		send(c->getFd(), welcome.c_str(), welcome.length(), 0);
+	} else {
+		c->setStatus(USERNAME);
+	}
+}
 
 void Server::cmd_ping(std::vector<std::string> arg, Client *c) {
 	std::string msg = ":localhost PONG * :" + arg[0] + "\r\n";
