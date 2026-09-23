@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 04:23:05 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 07:07:13 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -81,11 +81,11 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 	std::string line;
 
 	while (std::getline(stream, line)) {
+		if (!line.empty() && line[line.length() - 1] == '\r')
+			line.erase(line.length() - 1);
 		if (line.empty())
 			continue;
-		if (line[line.length() - 1] == '\r')
-			line.erase(line.length() - 1);
-			
+
 		std::stringstream lineStream(line);
 		std::string command;
 		lineStream >> command;
@@ -107,19 +107,21 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 				arg.push_back(token);
 			}
 		}
-		if (command == "PASS" && c->getStatus() == NONE)
+		if (command == "CAP" && c->getStatus() == NONE)
+			continue;
+		else if (command == "PASS" && c->getStatus() == NONE)
 			cmd_pass(arg, c);
 		else if (command == "NICK" && (c->getStatus() == PASSWORD || c->getStatus() == USERNAME))
-			cmd_nick(arg, c, false);
+			cmd_nick(arg, c);
 		else if (command == "USER" && (c->getStatus() == PASSWORD || c->getStatus() == NICKNAME))
 			cmd_user(arg, c);
 		else if (c->getStatus() == FULL) {
 			if (command == "PING")
 				cmd_ping(arg, c);
 			else if (command == "NICK")
-				cmd_nick(arg, c, true);
-			// else if (command == "USER")
-			// 	cmd_user(arg, c, true);
+				cmd_nick(arg, c);
+			else if (command == "USER")
+				cmd_user(arg, c);
 			// else if (command == "JOIN")
 			// 	cmd_join(arg, c);
 		}
@@ -146,7 +148,7 @@ void Server::cmd_pass(std::vector<std::string> arg, Client *c) {
 	}
 }
 
-void Server::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) {
+void Server::cmd_nick(std::vector<std::string> nick, Client *c) {
 	if (nick.empty()) {
 		std::string err = ":localhost 431 * :No nickname given\r\n";
 		send(c->getFd(), err.c_str(), err.length(), 0);
@@ -161,7 +163,7 @@ void Server::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) 
 	else {
 		Server::_used_nicknames.push_back(nick[0]);
 		c->setNickname(nick[0]);
-		if (is_logged) {
+		if (c->getStatus() == FULL) {
 			std::string old_nick = c->getNickname();
 			if (!old_nick.empty()) {
 				std::vector<std::string>::iterator it_old = std::find(Server::_used_nicknames.begin(), Server::_used_nicknames.end(), old_nick);
@@ -246,26 +248,33 @@ int	Server::init_client(fd_set &rfds, std::vector<Client*> &clients) {
 	return 0;
 }
 
-void	Server::init_buffer(fd_set &rfds, std::vector<Client*> &clients) {
-	for (size_t i = 0; i < clients.size(); ++i) {	
+void Server::init_buffer(fd_set &rfds, std::vector<Client*> &clients) {
+	for (size_t i = 0; i < clients.size(); ++i) {   
 		if (clients[i]->getFd() > 0 && FD_ISSET(clients[i]->getFd(), &rfds)) {
 			char buffer[1024];
-			buffer[0] = 't';
 			int bytes_read = recv(clients[i]->getFd(), buffer, 1023, 0);
-			
 			if (bytes_read <= 0) {
 				Server::getInstance().setNbClient(-1);
-				std::cout << "\033[1;31mClient disconnected. (FD: " << clients[i]->getFd() << ") Remaining: " << Server::getInstance().getNbClient() << "\033[1;37m" << std::endl;
+				std::cout << "\033[1;31mClient disconnected. (FD: " << clients[i]->getFd() 
+						<< ") Remaining: " << Server::getInstance().getNbClient() << "\033[1;37m" << std::endl;
 				delete clients[i];
 				clients.erase(clients.begin() + i);
 				--i;
+				continue;
 			}
-			else {
-				buffer[bytes_read] = '\0';
-				Server::getInstance().handle_tokens(buffer, clients[i]);
-				std::cout << "\033[1;33mReceived: " << buffer << "\033[1;37m" << std::endl;
-				bzero(buffer, 1024);
+			buffer[bytes_read] = '\0';
+			std::string current_buffer = clients[i]->getBuffer();
+			current_buffer += buffer;
+			size_t pos;
+			while ((pos = current_buffer.find('\n')) != std::string::npos) {
+				std::string command = current_buffer.substr(0, pos + 1);
+				
+				std::cout << "\033[1;33mReceived: " << command << "\033[1;37m";
+				Server::getInstance().handle_tokens(command, clients[i]);
+				
+				current_buffer.erase(0, pos + 1);
 			}
+			clients[i]->setBuffer(current_buffer);
 		}
 	}
 }

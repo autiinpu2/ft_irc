@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:23:46 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 04:04:24 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 06:53:44 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -51,6 +51,10 @@ void Client::setRealname(std::string name) {
 	this->_real_name = name;
 }
 
+void Client::setBuffer(std::string buffer) {
+    this->_buffer = buffer;
+}
+
 std::string Client::getNickname(void) const {
 	return this->_nickname;
 }
@@ -61,4 +65,8 @@ std::string Client::getUsername(void) const {
 
 std::string Client::getRealname(void) const {
 	return this->_real_name;
+}
+
+std::string Client::getBuffer(void) const {
+    return this->_buffer;
 }
