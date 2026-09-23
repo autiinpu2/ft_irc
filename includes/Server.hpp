@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 06:01:30 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 04:01:19 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,11 +22,11 @@
 # include <cstring>
 # include <exception>
 # include <vector>
-# include <map>
 # include <csignal>
 # include <string>
 # include <sstream>
 # include <fcntl.h>
+# include <map>
 
 # include "signal.hpp"
 
@@ -41,6 +41,8 @@ class Server {
 		int		nb_clients;
 		long	serv_port; 
 		const	std::string serv_password;
+		std::map<std::string, Client*> channels;
+		
 	public:
 		~Server();
 		static	Server	&getInstance(long port = 0, const std::string &password = "");
@@ -57,8 +59,9 @@ class Server {
 
 		void	cmd_pass(std::string pass, Client *c);
 		void	cmd_ping(std::string arg, Client *c);
+		void	cmd_join(std::string arg, Client *c);
 		
-		fd_set	init_rfds(std::vector<Client*> clients);
+		fd_set	init_rfds(std::vector<Client*> &clients);
 		int		init_client(fd_set &rfds, std::vector<Client*> &clients);
 		void	init_buffer(fd_set &rfds, std::vector<Client*> &clients);
 };
