@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 04:15:00 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 05:01:56 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@
 # include "signal.hpp"
 
 class Client;
+class Channel;
 
 class Server {
 	private:
@@ -42,7 +43,7 @@ class Server {
 		int		nb_clients;
 		long	serv_port; 
 		const	std::string serv_password;
-		std::map<std::string, Client*> channels;
+		std::map<std::string, Channel*> channels;
 		
 		std::vector<std::string> _used_nicknames;
 		std::vector<std::string> _used_usernames;
@@ -59,6 +60,7 @@ class Server {
 		int		getSocket(void) const;
 		int		getNbClient(void) const;
 		void	setNbClient(int nb);
+		void	setMap(std::string name_channel, Channel *channel);
 
 		void	cmd_join(std::vector<std::string> arg, Client *c);
 		void	cmd_pass(std::vector<std::string> arg, Client *c);

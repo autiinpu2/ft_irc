@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 04:23:05 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 06:23:57 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
 #include "utils.cpp"
 #include "Client.hpp"
+#include "Channel.hpp"
 
 Server* Server::_instance = NULL;
 
@@ -76,6 +77,10 @@ void	Server::setNbClient(int nb){
 	Server::nb_clients = Server::nb_clients + nb;
 }
 
+void	Server::setMap(std::string name_channel, Channel *channel) {
+	Server::channels[name_channel] = channel;
+}
+
 void Server::handle_tokens(const std::string &buffer, Client *c) {
 	std::stringstream stream(buffer);
 	std::string line;
@@ -120,8 +125,8 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 				cmd_nick(arg, c, true);
 			// else if (command == "USER")
 			// 	cmd_user(arg, c, true);
-			// else if (command == "JOIN")
-			// 	cmd_join(arg, c);
+			else if (command == "JOIN")
+				cmd_join(arg, c);
 		}
 		else {
 			std::string msg = ":localhost 451 * :You have not registered\r\n";
@@ -209,13 +214,20 @@ void Server::cmd_user(std::vector<std::string> arg, Client *c) {
 
 void Server::cmd_ping(std::vector<std::string> arg, Client *c) {
 	std::string msg = ":localhost PONG * :" + arg[0] + "\r\n";
-	
 	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
-// void Server::cmd_join(std::vector<std::string> arg, Client *c) {
-// 	if()
-// }
+void Server::cmd_join(std::vector<std::string> arg, Client *c) {
+	std::map<std::string, Channel*>::iterator it;
+	it = Server::getInstance().channels.find(arg[0]);
+	if (it == Server::getInstance().channels.end()) {
+		Channel *new_channel = new Channel(c, arg[0]);
+		Server::getInstance().setMap(arg[0], new_channel);
+		std::stringstream ss;
+		ss << ":" << c->getNickname() << "!" << c->getUsername() << " JOIN " << new_channel->getName() << "\n";  
+		send(c->getFd(), ss.str().c_str(), ss.str().size(), 0);
+	}
+}
 
 fd_set Server::init_rfds(std::vector<Client*> &clients) {
 	fd_set rfds;
