@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 00:22:58 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/23 02:12:47 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,11 +29,11 @@ Server::Server(long port, const std::string &password) :  nb_clients(0), serv_po
 	if (Server::serv_socket < 0)
 		throw std::runtime_error("socket init failed");
 	int opt = 1;
-    if (setsockopt(Server::serv_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-            throw std::runtime_error("setsockopt failed");
+	if (setsockopt(Server::serv_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+			throw std::runtime_error("setsockopt failed");
 	
 	if (fcntl(Server::serv_socket, F_SETFL, O_NONBLOCK) == -1)
-        throw std::runtime_error("fcntl failed on server fd");
+		throw std::runtime_error("fcntl failed on server fd");
 	if (bind(Server::serv_socket, (struct sockaddr *)&sock, sizeof(sockaddr_in)))
 			throw std::runtime_error("bind failed");
 	if (listen(Server::serv_socket, 10) == -1)
@@ -79,7 +79,6 @@ void	Server::setNbClient(int nb){
 void Server::handle_tokens(const std::string &buffer, Client *c) {
 	std::stringstream stream(buffer);
 	std::string line;
-	std::string arg;
 
 	while (std::getline(stream, line)) {
 		if (line.empty())
@@ -91,38 +90,92 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 		std::string command;
 		lineStream >> command;
 		
-		lineStream >> arg;
-		if (command == "PASS" && c->getStatus() == false)
+		std::vector<std::string> arg;
+        std::string token;
+		
+		while (lineStream >> token) {
+            if (token[0] == ':') {
+                token.erase(0, 1);
+                
+                std::string restOfLine;
+                std::getline(lineStream, restOfLine);
+                
+                token += restOfLine;
+                arg.push_back(token);
+                break;
+            } else {
+                arg.push_back(token);
+            }
+        }
+		if (command == "PASS" && c->getStatus() == NONE)
 			cmd_pass(arg, c);
-		else if (c->getStatus() == true) {
+		else if (command == "NICK" && c->getStatus() == PASSWORD)
+			cmd_nick(arg, c, false);
+		// else if (command == "USER" && c->getStatus() == NICKNAME)
+		// 	cmd_user(arg, c);
+		else if (c->getStatus() == FULL) {
 			if (command == "PING")
-				cmd_ping(arg, c);	
+				cmd_ping(arg, c);
+			else if (command == "NICK")
+				cmd_nick(arg, c, true);
+			// else if (command == "USER")
+			// 	cmd_user(arg, c, true);
 		}
 		else {
 			std::string msg = ":You have not registered\r\n";
-			send(c->getFd(), msg.c_str(), 27, 0);
+			send(c->getFd(), msg.c_str(), msg.length(), 0);
 		}
-			
 	}
 }
 
-void Server::cmd_pass(std::string pass, Client *c) {
-	if (pass == Server::serv_password) {
-		c->setStatus(true);
-		std::string msg = "::localhost 464 * :Password correct\r\n";
-		send(c->getFd(), msg.c_str(), 38, 0);
+void Server::cmd_pass(std::vector<std::string> arg, Client *c) {
+	if (arg.empty()) {
+        std::string err = ":localhost 461 * :No password given\r\n";
+        send(c->getFd(), err.c_str(), err.length(), 0);
+        return;
+    }
+	if (arg[0] == Server::serv_password) {
+		c->setStatus(PASSWORD);
+		std::string msg = "Password correct\r\n";
+		send(c->getFd(), msg.c_str(), msg.length(), 0);
 		std::cout << "New client logged" << std::endl;
 	}
 	else {
-		std::string msg = "::localhost 464 * :Password incorrect\r\n";
-		send(c->getFd(), msg.c_str(), 40, 0);
+		std::string msg = ":localhost 464 * :Password incorrect\r\n";
+		send(c->getFd(), msg.c_str(), msg.length(), 0);
 	}
 }
 
-void Server::cmd_ping(std::string arg, Client *c) {
-	std::string msg = ":localhost PONG * :" + arg + "\r\n";
+void Server::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) {
+	(void)c;
+	std::vector<std::string>::iterator it = std::find(Server::_used_nicknames.begin(), Server::_used_nicknames.end(), nick[0]);
+
+	if (it != Server::_used_nicknames.end()) {
+		std::string msg = ":localhost 433 * " + nick[0] + " :Nickname is already in use\r\n";
+		send(c->getFd(), msg.c_str(), msg.length(), 0);
+	} else {
+		if (is_logged) {
+			std::string old_nick = c->getNickname();
+			if (!old_nick.empty()) {
+				std::vector<std::string>::iterator it_old = std::find(Server::_used_nicknames.begin(), Server::_used_nicknames.end(), old_nick);
+				if (it_old != Server::_used_nicknames.end())
+					Server::_used_nicknames.erase(it_old);
+			}
+		}
+		Server::_used_nicknames.push_back(nick[0]);
+		c->setNickname(nick[0]);
+		c->setStatus(NICKNAME);
+	}
+}
+
+// void Server::cmd_user(std::vector<std::string> user, Client *c) {
 	
-	send(c->getFd(), msg.c_str(), strlen(msg.c_str()), 0);
+// }
+
+void Server::cmd_ping(std::vector<std::string> arg, Client *c) {
+	std::string msg = ":localhost PONG * :" + arg[0] + "\r\n";
+	
+	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
 fd_set Server::init_rfds(std::vector<Client*> clients) {
