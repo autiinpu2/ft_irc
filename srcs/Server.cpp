@@ -120,6 +120,8 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 				cmd_nick(arg, c, true);
 			// else if (command == "USER")
 			// 	cmd_user(arg, c, true);
+			else if (command == "JOIN")
+				cmd_join(arg, c);
 		}
 		else {
 			std::string msg = ":localhost 451 * :You have not registered\r\n";
@@ -211,7 +213,11 @@ void Server::cmd_ping(std::vector<std::string> arg, Client *c) {
 	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
-fd_set Server::init_rfds(std::vector<Client*> clients) {
+void Server::cmd_join(std::string arg, Client *c) {
+	if()
+}
+
+fd_set Server::init_rfds(std::vector<Client*> &clients) {
 	fd_set rfds;
 	FD_ZERO(&rfds);
 	FD_SET(Server::serv_socket, &rfds);
@@ -225,9 +231,6 @@ int	Server::init_client(fd_set &rfds, std::vector<Client*> &clients) {
 		try {
 			Client *c = new Client();
 			if (c->getFd() >= 0) {
-				// FD_SET(c->getFd(), &rfds);
-				std::cout << c->getFd() << std::endl;
-				std::cout << &rfds << std::endl;
 				clients.push_back(c);
 				std::cout << "\033[1;32mNew client connected! (FD: " << c->getFd() << ")" << std::endl;
 				Server::nb_clients++;
@@ -244,7 +247,7 @@ int	Server::init_client(fd_set &rfds, std::vector<Client*> &clients) {
 }
 
 void	Server::init_buffer(fd_set &rfds, std::vector<Client*> &clients) {
-	for (size_t i = 0; i < clients.size(); ++i) {			
+	for (size_t i = 0; i < clients.size(); ++i) {	
 		if (clients[i]->getFd() > 0 && FD_ISSET(clients[i]->getFd(), &rfds)) {
 			char buffer[1024];
 			buffer[0] = 't';
