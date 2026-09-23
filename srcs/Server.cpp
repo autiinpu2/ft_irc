@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 04:04:55 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/23 04:23:05 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -120,8 +120,8 @@ void Server::handle_tokens(const std::string &buffer, Client *c) {
 				cmd_nick(arg, c, true);
 			// else if (command == "USER")
 			// 	cmd_user(arg, c, true);
-			else if (command == "JOIN")
-				cmd_join(arg, c);
+			// else if (command == "JOIN")
+			// 	cmd_join(arg, c);
 		}
 		else {
 			std::string msg = ":localhost 451 * :You have not registered\r\n";
@@ -159,6 +159,8 @@ void Server::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) 
 		send(c->getFd(), msg.c_str(), msg.length(), 0);
 	}
 	else {
+		Server::_used_nicknames.push_back(nick[0]);
+		c->setNickname(nick[0]);
 		if (is_logged) {
 			std::string old_nick = c->getNickname();
 			if (!old_nick.empty()) {
@@ -169,7 +171,7 @@ void Server::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) 
 			std::string success_msg = ":" + old_nick + "!user@localhost NICK :" + nick[0] + "\r\n";
 				send(c->getFd(), success_msg.c_str(), success_msg.length(), 0);
 		}
-		if (c->getStatus() == USERNAME) {
+		else if (c->getStatus() == USERNAME) {
 			c->setStatus(FULL);
 			std::string welcome = ":localhost 001 " + c->getNickname() + " :Welcome to the IRC Network\r\n";
 			send(c->getFd(), welcome.c_str(), welcome.length(), 0);
@@ -177,8 +179,6 @@ void Server::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) 
 		else {
 			c->setStatus(NICKNAME);
 		}
-		Server::_used_nicknames.push_back(nick[0]);
-		c->setNickname(nick[0]);
 	}
 }
 
@@ -190,7 +190,7 @@ void Server::cmd_user(std::vector<std::string> arg, Client *c) {
 	}
 
 	if (c->getStatus() == FULL || c->getStatus() == USERNAME) {
-		std::string err = ":localhost 462 " + c->getNickname() + " :You may not reregister\r\n";
+		std::string err = ":localhost 462 " + c->getRealname() + " :You may not reregister\r\n";
 		send(c->getFd(), err.c_str(), err.length(), 0);
 		return;
 	}
@@ -213,9 +213,9 @@ void Server::cmd_ping(std::vector<std::string> arg, Client *c) {
 	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
-void Server::cmd_join(std::string arg, Client *c) {
-	if()
-}
+// void Server::cmd_join(std::vector<std::string> arg, Client *c) {
+// 	if()
+// }
 
 fd_set Server::init_rfds(std::vector<Client*> &clients) {
 	fd_set rfds;

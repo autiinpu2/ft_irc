@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 04:01:19 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/23 04:15:00 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,7 +60,7 @@ class Server {
 		int		getNbClient(void) const;
 		void	setNbClient(int nb);
 
-		void	cmd_join(std::string arg, Client *c);
+		void	cmd_join(std::vector<std::string> arg, Client *c);
 		void	cmd_pass(std::vector<std::string> arg, Client *c);
 		void	cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged);
 		void	cmd_user(std::vector<std::string> pass, Client *c);
