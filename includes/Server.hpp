@@ -27,6 +27,7 @@
 # include <sstream>
 # include <fcntl.h>
 # include <map>
+# include <algorithm>
 
 # include "signal.hpp"
 
@@ -43,6 +44,8 @@ class Server {
 		const	std::string serv_password;
 		std::map<std::string, Client*> channels;
 		
+		std::vector<std::string> _used_nicknames;
+		std::vector<std::string> _used_usernames;
 	public:
 		~Server();
 		static	Server	&getInstance(long port = 0, const std::string &password = "");
@@ -57,9 +60,11 @@ class Server {
 		int		getNbClient(void) const;
 		void	setNbClient(int nb);
 
-		void	cmd_pass(std::string pass, Client *c);
-		void	cmd_ping(std::string arg, Client *c);
 		void	cmd_join(std::string arg, Client *c);
+		void	cmd_pass(std::vector<std::string> arg, Client *c);
+		void	cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged);
+		void	cmd_user(std::vector<std::string> pass, Client *c);
+		void	cmd_ping(std::vector<std::string> arg, Client *c);
 		
 		fd_set	init_rfds(std::vector<Client*> &clients);
 		int		init_client(fd_set &rfds, std::vector<Client*> &clients);
