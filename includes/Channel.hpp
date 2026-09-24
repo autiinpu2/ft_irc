@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 06:13:21 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/24 06:53:11 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,11 @@
 # include <set>
 
 class Client;
+
+enum TargetType {
+    CLIENT,
+    CLIENT_GROUP
+};
 
 class Channel {
 	private:
@@ -29,6 +34,9 @@ class Channel {
 		~Channel();
 
 	void printClients(void) const;
+	
 	std::string getTopic(void) const;
 	std::string getName(void) const;
+	
+	void		addclient(Client *c);
 };

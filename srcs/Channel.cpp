@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 03:25:15 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 06:13:50 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/24 06:55:35 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,4 +36,8 @@ std::string Channel::getTopic(void) const {
 
 std::string Channel::getName(void) const {
 	return this->name;
+}
+
+void	Channel::addclient(Client *c) {
+	clients.insert(c);
 }

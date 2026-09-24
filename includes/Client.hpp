@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:20:13 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 04:03:12 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/24 03:16:41 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,7 +38,9 @@ class Client {
 	void setNickname(std::string nick);
 	void setUsername(std::string user);
 	void setRealname(std::string name);
+	
 	LOG_STATUS getStatus(void) const;
+	
 	std::string getNickname(void) const;
 	std::string getUsername(void) const;
 	std::string getRealname(void) const;

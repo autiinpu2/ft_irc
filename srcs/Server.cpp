@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 06:23:57 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/24 07:07:42 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -226,6 +226,12 @@ void Server::cmd_join(std::vector<std::string> arg, Client *c) {
 		std::stringstream ss;
 		ss << ":" << c->getNickname() << "!" << c->getUsername() << " JOIN " << new_channel->getName() << "\n";  
 		send(c->getFd(), ss.str().c_str(), ss.str().size(), 0);
+	}
+	else {
+		std::stringstream ss;
+		ss << ":" << c->getNickname() << "!" << c->getUsername() << " JOIN " << Server::getInstance().channels[it->first]->getName() << "\n";  
+		send(c->getFd(), ss.str().c_str(), ss.str().size(), 0);
+		Server::getInstance().channels[it->first]->addclient(c);
 	}
 }
 
