@@ -3,40 +3,35 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:23:46 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/23 04:04:24 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/09/25 05:45:21 by mathys           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Client.hpp"
-#include "Server.hpp"
 
-Client::Client(void) {
-	this->fd = accept(Server::getInstance().getSocket(), NULL, NULL);
-	if (this->fd < 0)
-		throw std::runtime_error("fd accept failed");
-	if (fcntl(this->fd, F_SETFL, O_NONBLOCK) == -1)
-        throw std::runtime_error("fcntl failed on client fd");
-	this->islog = NONE;
+Client::Client(int fd) : _fd(fd), _status(NONE) {
 	this->_nickname = "*";
+	if (fcntl(this->_fd, F_SETFL, O_NONBLOCK) == -1)
+		throw std::runtime_error("fcntl failed on client fd");
 }
 
-Client::~Client(){
-	close(this->fd);
+Client::~Client() {
+	close(this->_fd);
 }
 
 int Client::getFd(void) const {
-	return this->fd;
+	return this->_fd;
 }
 
-void  Client::setStatus(LOG_STATUS status) {
-	this->islog = status;
+void Client::setStatus(LOG_STATUS status) {
+	this->_status = status;
 }
 
-LOG_STATUS  Client::getStatus(void) const {
-	return this->islog;
+LOG_STATUS Client::getStatus(void) const {
+	return this->_status;
 }
 
 void Client::setNickname(std::string nick) {

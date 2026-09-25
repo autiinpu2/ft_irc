@@ -3,44 +3,29 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 05:20:22 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/22 02:34:40 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/25 05:48:51 by mathys           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Server.hpp"
-#include "Client.hpp"
-
-static long parsing(int ac, char **av) {
-	char *endptr;
-	
-	if (ac != 3) {
-		std::cerr << "\033[1;31mError: wrong number of agrs\033[1;37m" << std::endl;
-		return -1;
-	}
-	long port = strtol(av[1], &endptr, 10);
-	if (*endptr || (port < 0 || port > 65535)) {
-		std::cerr << "\033[1;31mError: invalid port\033[1;31m" << std::endl;
-		return -1;
-	}
-	return port;
-}
-
+#include "Parsing.hpp"
+ 
+# include <iostream>
+ 
 int main(int ac, char **av) {
-	long port = parsing(ac, av);
-	if (port == -1)
-		return 1;
-	std::string password = av[2];
 	try {
-		Server &server = Server::getInstance(port, password);
-		server.serv_loop();
-		
-	} catch (std::runtime_error e) {
-		std::cerr << e.what() << std::endl;
+		Parsing parsing(ac, av);
+		Server &server = Server::getInstance(parsing._port, parsing._password);
+		int ret = server.serv_loop();
+		Server::destroyInstance();
+		return ret;
+	}
+	catch (std::exception &e) {
+		std::cerr << "\033[1;31m" << e.what() << "\033[0m" << std::endl;
 		return 1;
 	}
-	Server::destroyInstance();
-	return 0;
 }
+ 

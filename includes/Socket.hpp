@@ -1,35 +1,31 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Channel.hpp                                        :+:      :+:    :+:   */
+/*   Socket.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 06:12:08 by mathys           ###   ########.fr       */
+/*   Created: 2026/09/25 03:34:53 by mathys            #+#    #+#             */
+/*   Updated: 2026/09/25 05:59:41 by mathys           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
  
-# include <set>
-# include <string>
-# include <vector>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <arpa/inet.h>
+# include <fcntl.h>
+# include <unistd.h>
  
-class Client;
- 
-class Channel {
+class Socket {
 	private:
-		std::string			_channel_name;
-		std::set<Client*>	_channel_clients;
+		int _fd;
 	public:
-		Channel(std::vector<Client*> &c, std::string channel_n);
-		~Channel();
+		Socket(int port);
+		~Socket();
  
-		const std::string	&getName(void) const;
-		void				addClient(Client *c);
-		void				removeClient(Client *c);
-		bool				inChannel(Client *c) const;
-		bool				isEmpty(void) const;
+		int getFd(void) const;
+		int acceptClient(void) const;
 };
  

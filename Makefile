@@ -8,7 +8,7 @@ OBJ_DIR     := build
 SRC_DIR     := srcs
 
 SRCS_DIR    := $(SRC_DIR)
-SRCS      := main.cpp Server.cpp signal.cpp Client.cpp Channel.cpp
+SRCS      := main.cpp Server.cpp signal.cpp Client.cpp Channel.cpp Socket.cpp Parsing.cpp Command.cpp utils.cpp
 
 SRCS        := $(addprefix $(SRCS_DIR)/, $(SRCS))
 

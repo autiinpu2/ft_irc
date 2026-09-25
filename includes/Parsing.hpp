@@ -1,35 +1,26 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Channel.hpp                                        :+:      :+:    :+:   */
+/*   Parsing.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 06:12:08 by mathys           ###   ########.fr       */
+/*   Created: 2026/09/25 03:58:01 by mathys            #+#    #+#             */
+/*   Updated: 2026/09/25 06:19:33 by mathys           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
- 
-# include <set>
+
 # include <string>
-# include <vector>
- 
-class Client;
- 
-class Channel {
-	private:
-		std::string			_channel_name;
-		std::set<Client*>	_channel_clients;
-	public:
-		Channel(std::vector<Client*> &c, std::string channel_n);
-		~Channel();
- 
-		const std::string	&getName(void) const;
-		void				addClient(Client *c);
-		void				removeClient(Client *c);
-		bool				inChannel(Client *c) const;
-		bool				isEmpty(void) const;
+# include <iostream>
+
+class Parsing {
+    public:
+        Parsing(int ac, char **av);
+        //Parsing(std::string line);
+        ~Parsing();
+
+        int                 _port;
+        const std::string   _password;
 };
- 

@@ -1,35 +1,20 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   Channel.hpp                                        :+:      :+:    :+:   */
+/*   utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 06:12:08 by mathys           ###   ########.fr       */
+/*   Created: 2026/09/25 05:48:28 by mathys            #+#    #+#             */
+/*   Updated: 2026/09/25 05:48:31 by mathys           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
  
-# include <set>
-# include <string>
 # include <vector>
  
 class Client;
  
-class Channel {
-	private:
-		std::string			_channel_name;
-		std::set<Client*>	_channel_clients;
-	public:
-		Channel(std::vector<Client*> &c, std::string channel_n);
-		~Channel();
- 
-		const std::string	&getName(void) const;
-		void				addClient(Client *c);
-		void				removeClient(Client *c);
-		bool				inChannel(Client *c) const;
-		bool				isEmpty(void) const;
-};
+int max_fd(std::vector<Client*> &clients);
  
