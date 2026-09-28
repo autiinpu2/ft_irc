@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 06:12:08 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 05:36:17 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,10 +20,11 @@ class Client;
  
 class Channel {
 	private:
-		std::string			_channel_name;
-		std::set<Client*>	_channel_clients;
+		std::string			_name;
+		std::set<Client*>	_clients;
+		Client				*_operator;
 	public:
-		Channel(std::vector<Client*> &c, std::string channel_n);
+		Channel(const std::string &n_channel, Client *c);
 		~Channel();
  
 		const std::string	&getName(void) const;

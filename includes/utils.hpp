@@ -3,18 +3,21 @@
 /*                                                        :::      ::::::::   */
 /*   utils.hpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 05:48:28 by mathys            #+#    #+#             */
-/*   Updated: 2026/09/25 05:48:31 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 05:37:31 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #pragma once
  
 # include <vector>
- 
+# include <string>
+
 class Client;
  
+
+bool isDigits(const std::string &s);
 int max_fd(std::vector<Client*> &clients);
  

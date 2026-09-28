@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Parsing.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:58:01 by mathys            #+#    #+#             */
-/*   Updated: 2026/09/25 06:19:33 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 04:19:12 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,13 +14,15 @@
 
 # include <string>
 # include <iostream>
+# include <cstdlib>
 
 class Parsing {
     public:
         Parsing(int ac, char **av);
-        //Parsing(std::string line);
         ~Parsing();
 
-        int                 _port;
+        long                 _port;
         const std::string   _password;
+
+        int checkPort(const std::string &s);
 };

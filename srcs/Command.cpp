@@ -3,16 +3,17 @@
 /*                                                        :::      ::::::::   */
 /*   Command.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/09/25 06:27:17 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 06:58:51 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Command.hpp"
 #include "Server.hpp"
 #include "Client.hpp"
+#include "Channel.hpp"
 
 # include <algorithm>
 # include <sstream>
@@ -25,7 +26,7 @@ Command::~Command() {}
 void Command::handleCmd(const std::string &buffer, Client *c) {
 	std::stringstream stream(buffer);
 	std::string line;
-
+	
 	while (std::getline(stream, line)) {
 		if (line.empty())
 			continue;
@@ -56,20 +57,20 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 		}
 
 		if (command == "PASS" && c->getStatus() == NONE)
-			this->cmd_pass(arg, c);
+			this->cmdPass(arg, c);
 		else if (command == "NICK" && (c->getStatus() == PASSWORD || c->getStatus() == USERNAME))
-			this->cmd_nick(arg, c, false);
+			this->cmdNick(arg, c, false);
 		else if (command == "USER" && (c->getStatus() == PASSWORD || c->getStatus() == NICKNAME))
-			this->cmd_user(arg, c);
+			this->cmdUser(arg, c);
 		else if (c->getStatus() == FULL) {
 			if (command == "PING")
-				this->cmd_ping(arg, c);
+				this->cmdPing(arg, c);
 			else if (command == "NICK")
-				this->cmd_nick(arg, c, true);
+				this->cmdNick(arg, c, true);
 			else if (command == "USER")
-			    this->cmd_user(arg, c);
-			// else if (command == "JOIN")
-			// 	this->cmd_join(arg, c);
+			    this->cmdUser(arg, c);
+			else if (command == "JOIN")
+				this->cmdJoin(arg, c);
 		}
 		else {
 			std::string msg = ":localhost 451 * :You have not registered\r\n";
@@ -78,7 +79,7 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 	}
 }
 
-void Command::cmd_pass(std::vector<std::string> arg, Client *c) {
+void Command::cmdPass(std::vector<std::string> arg, Client *c) {
 	if (arg.empty()) {
 		std::string err = ":localhost 461 * :No password given\r\n";
 		send(c->getFd(), err.c_str(), err.length(), 0);
@@ -94,7 +95,7 @@ void Command::cmd_pass(std::vector<std::string> arg, Client *c) {
 	}
 }
 
-void Command::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged) {
+void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) {
 	if (nick.empty()) {
 		std::string err = ":localhost 431 * :No nickname given\r\n";
 		send(c->getFd(), err.c_str(), err.length(), 0);
@@ -132,7 +133,7 @@ void Command::cmd_nick(std::vector<std::string> nick, Client *c, bool is_logged)
 	}
 }
 
-void Command::cmd_user(std::vector<std::string> arg, Client *c) {
+void Command::cmdUser(std::vector<std::string> arg, Client *c) {
 	if (arg.size() < 4) {
 		std::string err = ":localhost 461 * USER :Not enough parameters\r\n";
 		send(c->getFd(), err.c_str(), err.length(), 0);
@@ -157,13 +158,23 @@ void Command::cmd_user(std::vector<std::string> arg, Client *c) {
 	}
 }
 
-void Command::cmd_ping(std::vector<std::string> arg, Client *c) {
+void Command::cmdPing(std::vector<std::string> arg, Client *c) {
 	if (arg.empty())
 		return;
 	std::string msg = ":localhost PONG * :" + arg[0] + "\r\n";
 	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
-// void Command::cmd_join(std::vector<std::string> arg, Client *c) {
-// 	if()
-// }
+void	Command::cmdJoin(std::vector<std::string> arg, Client *c) {
+	std::map<std::string, Channel*>::const_iterator it = this->_server.getChannel().find(arg[0]);
+	if (it == this->_server.getChannel().end()) {
+		Channel *newChannel = new Channel(arg[0], c);
+		this->_server.addChannel(arg[0], newChannel);
+		std::stringstream ss;
+		ss << ":" << c->getNickname() << "!" << c->getUsername() << " JOIN " << newChannel->getName() << "\r\n";
+		send(c->getFd(), ss.str().c_str(), ss.str().length(), 0);
+	}
+	else {
+		std::cout << "coucounatahn" << std::endl;
+	}
+}

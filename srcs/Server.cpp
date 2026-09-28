@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 06:28:15 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 06:53:23 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "Command.hpp"
 #include "Client.hpp"
 #include "utils.hpp"
+#include "Channel.hpp"
 
 # include <cerrno>
 # include <sys/socket.h>
@@ -29,6 +30,9 @@ Server::Server(int port, const std::string &password) : _nb_clients(0), _port(po
 Server::~Server() {
 	for (size_t i = 0; i < this->_clients.size(); ++i)
 		delete this->_clients[i];
+	std::map<std::string, Channel*>::iterator it;
+	for (it = this->_channels.begin(); it != this->_channels.end(); ++it)
+		delete it->second;
 	delete this->_socket;
 	delete this->_command;
 }
@@ -60,12 +64,20 @@ int Server::getNbClient(void) const {
 	return this->_nb_clients;
 }
 
+const std::map<std::string, Channel*> &Server::getChannel(void) const {
+	return this->_channels;
+}
+
 std::vector<std::string> &Server::getUsedNicks(void) {
 	return this->_used_nicks;
 }
 
 void Server::setNbClient(int nb) {
 	this->_nb_clients = this->_nb_clients + nb;
+}
+
+void	Server::addChannel(const std::string &n_channel, Channel *ch) {
+	this->_channels.insert(std::make_pair(n_channel, ch));
 }
 
 fd_set Server::initFd(void) const {

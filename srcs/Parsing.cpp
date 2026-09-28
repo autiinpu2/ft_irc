@@ -3,35 +3,39 @@
 /*                                                        :::      ::::::::   */
 /*   Parsing.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:58:44 by mathys            #+#    #+#             */
-/*   Updated: 2026/09/25 05:59:26 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 05:47:49 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "Parsing.hpp"
- 
+#include "utils.hpp"
+
 Parsing::Parsing(int ac, char **av) : _password(ac == 3 ? av[2] : "") {
 	if (ac != 3)
 		throw std::runtime_error("Error: wrong number of args");
  
-	std::string port_str = av[1];
- 
-	size_t pos;
-	int port;
 	try {
-		port = std::stoi(port_str, &pos);
+		std::string portStr = av[1];
+		int port = checkPort(portStr);
+		this->_port = port;
 	}
-	catch (const std::exception &e) {
-		throw std::runtime_error("Error: invalid port");
+	catch(std::runtime_error &e) {
+		throw std::runtime_error(e.what()); 
 	}
- 
-	if (pos != port_str.size() || port < 6667 || 6669 < port)
-		throw std::runtime_error("Error: invalid port");
- 
-	this->_port = port;
 }
- 
+  
 Parsing::~Parsing() {}
  
+int Parsing::checkPort(const std::string &s) {
+	if (s.empty() || s.size() > 5)
+		throw std::runtime_error("Error: invalid port");
+	if (s.find_first_not_of("0123456789") != std::string::npos)
+		throw std::runtime_error("Error: invalid port");
+	long port = std::strtol(s.c_str(), NULL, 10);
+	if ( port < 6665 || 6669 < port)
+		throw std::runtime_error("Error: invalid port");
+	return port;
+}

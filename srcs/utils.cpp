@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:35:36 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 05:48:39 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 04:03:25 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,4 +23,10 @@ int max_fd(std::vector<Client*> &clients) {
 	}
 	return max;
 }
+
+bool isDigits(const std::string &s) {
+	return !s.empty() && s.find_first_not_of("0123456789") == std::string::npos;
+}
+
+
  

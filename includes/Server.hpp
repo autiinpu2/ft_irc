@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 06:26:45 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 06:26:31 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,6 +58,8 @@ class Server {
 		int				getSocket(void) const;
 		int				getNbClient(void) const;
 		std::vector<std::string> &getUsedNicks(void);
+		const std::map<std::string, Channel*> &getChannel(void) const;
+		void			addChannel(const std::string &n_channel, Channel *ch);
 
 		void			setNbClient(int nb);
 };
