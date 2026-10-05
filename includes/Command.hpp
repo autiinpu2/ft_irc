@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Command.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:37:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/05 23:56:14 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/06 00:26:43 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ class Command {
 		void	cmdNick(std::vector<std::string> nick, Client *c, bool is_logged);
 		void	cmdUser(std::vector<std::string> pass, Client *c);
 		void	cmdPing(std::vector<std::string> arg, Client *c);
+		void	cmdMsg(std::vector<std::string> arg, Client *c);
 	public:
 		Command(Server &server);
 		~Command();

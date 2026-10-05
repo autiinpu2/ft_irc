@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/28 06:53:23 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/06 00:31:55 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,6 +70,10 @@ const std::map<std::string, Channel*> &Server::getChannel(void) const {
 
 std::vector<std::string> &Server::getUsedNicks(void) {
 	return this->_used_nicks;
+}
+
+std::vector<Client*> &Server::getClients (void) {
+	return this->_clients;
 }
 
 void Server::setNbClient(int nb) {

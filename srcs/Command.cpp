@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Command.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/09/28 07:26:52 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/06 01:10:03 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 
 # include <algorithm>
 # include <sstream>
+#include <string>
 # include <sys/socket.h>
 
 Command::Command(Server &server) : _server(server) {}
@@ -71,6 +72,8 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 			    this->cmdUser(arg, c);
 			else if (command == "JOIN")
 				this->cmdJoin(arg, c);
+			else if (command == "PRIVMSG")
+				this->cmdMsg(arg, c);
 		}
 		else {
 			std::string msg = ":localhost 451 * :You have not registered\r\n";
@@ -176,6 +179,45 @@ void	Command::cmdJoin(std::vector<std::string> arg, Client *c) {
 		reply(c, ":ircserv 353 " + c->getNick() + " = " + newChannel->getName() + "+nt");
 	}
 	else {	
+	}
+}
+
+
+void Command::cmdMsg(std::vector<std::string> arg, Client *sender) {
+	std::string msg = arg.back();
+	arg.pop_back();
+
+	std::vector<std::string> targets;
+	for (std::vector<std::string>::iterator it = arg.begin(); it != arg.end(); ++it) {
+		std::stringstream ss(*it);
+		std::string target;
+		while (std::getline(ss, target, ',')) {
+			if (!target.empty()) {
+				targets.push_back(target);
+			}
+		}
+	}
+
+	std::vector<Client*> clients = this->_server.getClients();
+
+	for (std::vector<std::string>::iterator iter = targets.begin(); iter != targets.end(); ++iter) {
+		Client* recv = NULL;
+
+		for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
+			Client* currentClient = *it;
+			if (currentClient != NULL && currentClient->getNick() == *iter) {
+				recv = currentClient;
+				break;
+			}
+		}
+
+		if (recv != NULL) {
+			std::string send_msg = ":" + sender->getNick() + " PRIVMSG " + recv->getNick() + " :" + msg + "\r\n";
+			send(recv->getFd(), send_msg.c_str(), send_msg.length(), 0);
+		} else {
+			std::string send_msg = ":localhost 401 " + sender->getNick() + " " + *iter + " :No such nick/channel\r\n";
+			send(sender->getFd(), send_msg.c_str(), send_msg.length(), 0);
+		}
 	}
 }
 
