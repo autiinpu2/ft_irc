@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:37:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/09/28 07:22:16 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/05 23:56:14 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,6 @@ class Command {
  
 		void	handleCmd(const std::string &buffer, Client *c);
 		void	reply(Client *c, const std::string &msg);
-		void	replyJoin()
+		void	replyJoin(Client *c, const std::string &msg);
 };
  
