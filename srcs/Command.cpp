@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/09/28 06:58:51 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/09/28 07:26:52 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,11 +106,11 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 	std::vector<std::string>::iterator it = std::find(used_nicks.begin(), used_nicks.end(), nick[0]);
 
 	if (it != used_nicks.end()) {
-		std::string msg = ":localhost 433 " + c->getNickname() + " " + nick[0] + " :Nickname is already in use\r\n";
+		std::string msg = ":localhost 433 " + c->getNick() + " " + nick[0] + " :Nickname is already in use\r\n";
 		send(c->getFd(), msg.c_str(), msg.length(), 0);
 	}
 	else {
-		std::string old_nick = c->getNickname();
+		std::string old_nick = c->getNick();
 		used_nicks.push_back(nick[0]);
 		c->setNickname(nick[0]);
 		if (is_logged) {
@@ -124,7 +124,7 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 		}
 		else if (c->getStatus() == USERNAME) {
 			c->setStatus(FULL);
-			std::string welcome = ":localhost 001 " + c->getNickname() + " :Welcome to the IRC Network\r\n";
+			std::string welcome = ":localhost 001 " + c->getNick() + " :Welcome to the IRC Network\r\n";
 			send(c->getFd(), welcome.c_str(), welcome.length(), 0);
 		}
 		else {
@@ -151,7 +151,7 @@ void Command::cmdUser(std::vector<std::string> arg, Client *c) {
 
 	if (c->getStatus() == NICKNAME) {
 		c->setStatus(FULL);
-		std::string welcome = ":localhost 001 " + c->getNickname() + " :Welcome to the IRC Network\r\n";
+		std::string welcome = ":localhost 001 " + c->getNick() + " :Welcome to the IRC Network\r\n";
 		send(c->getFd(), welcome.c_str(), welcome.length(), 0);
 	} else {
 		c->setStatus(USERNAME);
@@ -170,11 +170,16 @@ void	Command::cmdJoin(std::vector<std::string> arg, Client *c) {
 	if (it == this->_server.getChannel().end()) {
 		Channel *newChannel = new Channel(arg[0], c);
 		this->_server.addChannel(arg[0], newChannel);
-		std::stringstream ss;
-		ss << ":" << c->getNickname() << "!" << c->getUsername() << " JOIN " << newChannel->getName() << "\r\n";
-		send(c->getFd(), ss.str().c_str(), ss.str().length(), 0);
+		std::string prefix = ":" + c->getNick() + "!" + c->getUser();
+		reply(c, prefix + " JOIN " + newChannel->getName()); 
+		reply(c, ":ircserv MODE " + newChannel->getName() + "+nt");
+		reply(c, ":ircserv 353 " + c->getNick() + " = " + newChannel->getName() + "+nt");
 	}
-	else {
-		std::cout << "coucounatahn" << std::endl;
+	else {	
 	}
+}
+
+void Command::reply(Client *c, const std::string &msg) {
+	std::string m = msg + "\r\n";
+	send(c->getFd(), m.c_str(), m.length(), 0);
 }

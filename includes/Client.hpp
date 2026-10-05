@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:20:13 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 06:14:11 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 07:10:18 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,8 +37,8 @@ class Client {
 		~Client();
 
 	int 			getFd(void) const;
-	std::string 	getNickname(void) const;
-	std::string 	getUsername(void) const;
+	std::string 	getNick(void) const;
+	std::string 	getUser(void) const;
 	std::string		getRealname(void) const;
 	LOG_STATUS		getStatus(void) const;
 

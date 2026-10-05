@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:23:46 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/25 05:45:21 by mathys           ###   ########.fr       */
+/*   Updated: 2026/09/28 07:10:34 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,11 +46,11 @@ void Client::setRealname(std::string name) {
 	this->_real_name = name;
 }
 
-std::string Client::getNickname(void) const {
+std::string Client::getNick(void) const {
 	return this->_nickname;
 }
 
-std::string Client::getUsername(void) const {
+std::string Client::getUser(void) const {
 	return this->_username;
 }
 
