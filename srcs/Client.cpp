@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:23:46 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/28 07:10:34 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/06 01:06:59 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,7 +46,7 @@ void Client::setRealname(std::string name) {
 	this->_real_name = name;
 }
 
-std::string Client::getNick(void) const {
+const std::string &Client::getNick(void) const {
 	return this->_nickname;
 }
 

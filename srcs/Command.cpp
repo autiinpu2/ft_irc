@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/09/28 07:26:52 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/06 01:43:21 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -170,16 +170,10 @@ void	Command::cmdJoin(std::vector<std::string> arg, Client *c) {
 	if (it == this->_server.getChannel().end()) {
 		Channel *newChannel = new Channel(arg[0], c);
 		this->_server.addChannel(arg[0], newChannel);
-		std::string prefix = ":" + c->getNick() + "!" + c->getUser();
-		reply(c, prefix + " JOIN " + newChannel->getName()); 
-		reply(c, ":ircserv MODE " + newChannel->getName() + "+nt");
-		reply(c, ":ircserv 353 " + c->getNick() + " = " + newChannel->getName() + "+nt");
+		newChannel->returnJOIN(c, "new");
 	}
-	else {	
+	else {
+		it->second->returnJOIN(c, "exists");
 	}
 }
 
-void Command::reply(Client *c, const std::string &msg) {
-	std::string m = msg + "\r\n";
-	send(c->getFd(), m.c_str(), m.length(), 0);
-}

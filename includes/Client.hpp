@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:20:13 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/28 07:10:18 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/06 01:32:59 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,14 +36,14 @@ class Client {
 		Client(int fd);
 		~Client();
 
-	int 			getFd(void) const;
-	std::string 	getNick(void) const;
-	std::string 	getUser(void) const;
-	std::string		getRealname(void) const;
-	LOG_STATUS		getStatus(void) const;
+	int 				getFd(void) const;
+	const std::string 	&getNick(void) const;
+	std::string 		getUser(void) const;
+	std::string			getRealname(void) const;
+	LOG_STATUS			getStatus(void) const;
 
-	void 			setStatus(LOG_STATUS status);
-	void 			setNickname(std::string nick);
-	void 			setUsername(std::string user);
-	void 			setRealname(std::string name);
+	void 				setStatus(LOG_STATUS status);
+	void 				setNickname(std::string nick);
+	void 				setUsername(std::string user);
+	void 				setRealname(std::string name);
 };
