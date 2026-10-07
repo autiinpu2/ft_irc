@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/06 03:25:53 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/10/08 00:17:25 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,54 +14,42 @@
 #include "Server.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "Parsing.hpp"
 
 # include <algorithm>
 # include <sstream>
 # include <string>
 # include <sys/socket.h>
 
+static void sendMsg(Client *c, const std::string &msg) {
+	std::string m = msg + "\r\n";
+	send(c->getFd(), m.c_str(), m.length(), 0);
+}
+
 Command::Command(Server &server) : _server(server) {}
 
 Command::~Command() {}
 
 void Command::handleCmd(const std::string &buffer, Client *c) {
-	std::stringstream stream(buffer);
-	std::string line;
-	
+	std::stringstream 	stream(buffer);
+	std::string 		line;
+
 	while (std::getline(stream, line)) {
+		if (!line.empty() && line[line.size() - 1] == '\r')
+			line.erase(line.size() - 1);
 		if (line.empty())
 			continue;
-		if (line[line.length() - 1] == '\r')
-			line.erase(line.length() - 1);
 
-		std::stringstream lineStream(line);
 		std::string command;
-		lineStream >> command;
-
 		std::vector<std::string> arg;
-		std::string token;
+		Parsing::parseLine(line, command, arg);
 
-		while (lineStream >> token) {
-			if (token[0] == ':') {
-				token.erase(0, 1);
-
-				std::string rest;
-				std::getline(lineStream, rest);
-
-				token += rest;
-				arg.push_back(token);
-				break;
-			} 
-            else {
-				arg.push_back(token);
-			}
-		}
-
-		if (command == "PASS" && c->getStatus() == NONE)
+		LOG_STATUS status= c->getStatus();
+		if (command == "PASS" && status == NONE)
 			this->cmdPass(arg, c);
-		else if (command == "NICK" && (c->getStatus() == PASSWORD || c->getStatus() == USERNAME))
+		else if (command == "NICK" && (status == PASSWORD || status == USERNAME))
 			this->cmdNick(arg, c, false);
-		else if (command == "USER" && (c->getStatus() == PASSWORD || c->getStatus() == NICKNAME))
+		else if (command == "USER" && (status == PASSWORD || status == NICKNAME))
 			this->cmdUser(arg, c);
 		else if (c->getStatus() == FULL) {
 			if (command == "PING")
@@ -75,10 +63,9 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 			else if (command == "PRIVMSG")
 				this->cmdMsg(arg, c);
 		}
-		else {
-			std::string msg = ":localhost 451 * :You have not registered\r\n";
-			send(c->getFd(), msg.c_str(), msg.length(), 0);
-		}
+		else if (status != FULL)
+			sendMsg(c, ":localhost 451 * :You have not registered");
+
 	}
 }
 
@@ -90,7 +77,7 @@ void Command::cmdPass(std::vector<std::string> arg, Client *c) {
 	}
 	if (arg[0] == this->_server.getPassword()) {
 		c->setStatus(PASSWORD);
-		std::cout << "New client logged" << std::endl;
+		std::cout << "\033[1;32mNew client logged!\033[0m" << std::endl;
 	}
 	else {
 		std::string msg = ":localhost 464 * :Password incorrect\r\n";
@@ -168,18 +155,45 @@ void Command::cmdPing(std::vector<std::string> arg, Client *c) {
 	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
-void	Command::cmdJoin(std::vector<std::string> arg, Client *c) {
-	std::map<std::string, Channel*>::const_iterator it = this->_server.getChannel().find(arg[0]);
-	if (it == this->_server.getChannel().end()) {
-		Channel *newChannel = new Channel(arg[0], c);
-		this->_server.addChannel(arg[0], newChannel);
-		std::string prefix = ":" + c->getNick() + "!" + c->getUser();
-		reply(c, prefix + " JOIN " + newChannel->getName()); 
-		reply(c, ":ircserv MODE " + newChannel->getName() + "+nt");
-		reply(c, ":ircserv 353 " + c->getNick() + " = " + newChannel->getName() + "+nt");
+static std::string joinError(Channel *ch, Client *c, const std::string &key) {
+	std::string target = " " + c->getNick() + " " + ch->getName();
+
+	if (ch->isInviteOnly() && !ch->isInvited(c))
+		return ":ircserv 473" + target + " :Cannot join channel (+i)";
+	if (!ch->getKey().empty() && ch->getKey() != key)
+		return ":ircserv 475" + target + " :Cannot join channel (+k)";
+	if (ch->getLimit() > 0 && ch->getSize() >= ch->getLimit())
+		return ":ircserv 471" + target + " :Cannot join channel (+l)";
+	return "";
+}
+
+void Command::joinChannel(const std::string &name, const std::string &key, Client *c) {
+	const std::map<std::string, Channel*> &channels = this->_server.getChannel();
+	std::map<std::string, Channel*>::const_iterator it = channels.find(name);
+
+	if (name.size() < 2 || name[0] != '#' || name.size() > 200 || name.find("^G") != std::string::npos) {
+		sendMsg(c, ":ircserv 403 " + c->getNick() + " " + name + " :No such channel");
+		return;
 	}
-	else {	
+	if (it == channels.end()) {
+		Channel *newChannel = new Channel(name, c, key);
+		this->_server.addChannel(name, newChannel);
+		c->setNbChannels(1);
+		newChannel->returnJOIN(c);	
+		return;
 	}
+	Channel *channel = it->second;
+	if (channel->inChannel(c))
+		return;
+	std::string error = joinError(channel, c, key);
+	if (!error.empty()) {
+		sendMsg(c, error);
+		return;
+	}
+	channel->uninvite(c);
+	channel->addClient(c);
+	c->setNbChannels(1);
+	channel->returnJOIN(c);
 }
 
 void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
@@ -238,4 +252,28 @@ void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
 void Command::reply(Client *c, const std::string &msg) {
 	std::string m = msg + "\r\n";
 	send(c->getFd(), m.c_str(), m.length(), 0);
+}
+void Command::cmdJoin(std::vector<std::string> args, Client *c) {
+	if (args.empty()) {
+		sendMsg(c, ":ircserv 461 " + c->getNick() + " JOIN :Not enough parameters");
+		return;
+	}
+
+	std::vector<std::string> names = Parsing::splitArg(args[0]);
+	std::vector<std::string> keys;
+
+	if (args.size() > 1)
+		keys = Parsing::splitArg(args[1]);
+
+	if (Parsing::vectorEmpty(names) || Parsing::vectorEmpty(keys)) {
+		sendMsg(c, ":ircserv 403 " + c->getNick() + " " + args[0] + " :No such channel");
+		return;
+	}
+
+	for (size_t i = 0; i < names.size(); ++i) {
+		if (i < keys.size())
+			this->joinChannel(names[i], keys[i], c);
+		else
+			this->joinChannel(names[i], "", c);
+	}
 }
