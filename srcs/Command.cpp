@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/07 23:24:33 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/07 23:32:05 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -172,7 +172,7 @@ void Command::joinChannel(const std::string &name, const std::string &key, Clien
 	if (it == channels.end()) {
 		Channel *newChannel = new Channel(name, c, key);
 		this->_server.addChannel(name, newChannel);
-		newChannel->returnJOIN(c);
+		newChannel->returnJOIN(c);	
 		return;
 	}
 	Channel *channel = it->second;

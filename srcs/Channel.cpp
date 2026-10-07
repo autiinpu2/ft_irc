@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 03:25:15 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/07 23:22:22 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/08 00:01:20 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 
 Channel::Channel(const std::string &n_channel, Client *c, const std::string key) : _name(n_channel), _topic(""), _key(key), _limit(0), _invite_only(false) {
 	this->_clients.insert(c);
-	this->_operator = c;
+	this->_operators.insert(c);
 	this->_mode = "+nt";
 }
 
@@ -30,10 +30,6 @@ const std::string	&Channel::getMode(void) const {
 	return this->_mode;		
 }
 
-const std::string	&Channel::getOperator(void) const {
-	return this->_operator->getNick();		
-}
-
 std::string Channel::getClients(void) const {
 	std::string clients;
 	std::set<Client*>::const_iterator it;
@@ -41,7 +37,7 @@ std::string Channel::getClients(void) const {
 		if (*it) {
 			if (!clients.empty())
 				clients += " ";
-			if (*it == this->_operator)
+			if (isOperator(*it) == true)
 				clients += "@";
 			clients += (*it)->getNick();
 		}
@@ -64,6 +60,12 @@ size_t Channel::getLimit(void) const {
 
 size_t Channel::getSize(void) const {
 	return this->_clients.size();
+}
+
+bool	Channel::isOperator(Client *c) const {
+	if (this->_operators.find(c) != this->_operators.end())
+		return true;
+	return false;
 }
 
 bool Channel::isInviteOnly(void) const {

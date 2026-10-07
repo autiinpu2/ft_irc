@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/07 23:22:13 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/08 00:01:14 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,7 +23,7 @@ class Channel {
 	private:
 		std::string			_name;
 		std::set<Client*>	_clients;
-		Client				*_operator;
+		std::set<Client*>	_operators;
 		std::string			_mode;
 		std::string			_topic;
 		std::string			_key;
@@ -36,12 +36,12 @@ class Channel {
  
 		const std::string	&getName(void) const;
 		const std::string	&getMode(void) const;
-		const std::string	&getOperator(void) const;
 		std::string			getClients(void) const;
 		const std::string	&getTopic(void) const;
 		const std::string	&getKey(void) const;
 		size_t				getLimit(void) const;
 		size_t				getSize(void) const;
+		bool				isOperator(Client *c) const;
 		
 		bool				isInviteOnly(void) const;
 		bool				isInvited(Client *c) const;
