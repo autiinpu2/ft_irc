@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:37:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/06 00:31:28 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/07 02:46:46 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ class Command {
 		Server &_server;
  
 		void	cmdJoin(std::vector<std::string> arg, Client *c);
+		void	joinChannel(const std::string &name, const std::string &key, Client *c);
 		void	cmdPass(std::vector<std::string> arg, Client *c);
 		void	cmdNick(std::vector<std::string> nick, Client *c, bool is_logged);
 		void	cmdUser(std::vector<std::string> pass, Client *c);
@@ -33,4 +34,3 @@ class Command {
  
 		void	handleCmd(const std::string &buffer, Client *c);
 };
- 

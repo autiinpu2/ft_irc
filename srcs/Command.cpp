@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/06 01:43:21 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/07 03:56:10 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,63 +19,74 @@
 # include <sstream>
 # include <sys/socket.h>
 
+static void sendMsg(Client *c, const std::string &msg) {
+	std::string m = msg + "\r\n";
+	send(c->getFd(), m.c_str(), m.length(), 0);
+}
+
+static std::vector<std::string> splitArg(const std::string &s) {
+	std::vector<std::string> 	res;
+	std::stringstream 			ss(s);
+	std::string 				arg;
+
+	while (std::getline(ss, arg, ',')) {
+		if (!arg.empty())
+			res.push_back(arg);
+	}
+	return res;
+}
+
 Command::Command(Server &server) : _server(server) {}
 
 Command::~Command() {}
 
+static void parseLine(const std::string &line, std::string &command, std::vector<std::string> &arg) {
+	std::stringstream 	ss(line);
+	std::string 		token;
+
+	ss >> command;
+	while (ss >> token) {
+		if (token[0] == ':') {
+			std::string rest;
+			std::getline(ss, rest);
+			arg.push_back(token.substr(1) + rest);
+			break;
+		}
+		arg.push_back(token);
+	}
+}
+
 void Command::handleCmd(const std::string &buffer, Client *c) {
-	std::stringstream stream(buffer);
-	std::string line;
-	
+	std::stringstream 	stream(buffer);
+	std::string 		line;
+
 	while (std::getline(stream, line)) {
+		if (!line.empty() && line[line.size() - 1] == '\r')
+			line.erase(line.size() - 1);
 		if (line.empty())
 			continue;
-		if (line[line.length() - 1] == '\r')
-			line.erase(line.length() - 1);
 
-		std::stringstream lineStream(line);
 		std::string command;
-		lineStream >> command;
-
 		std::vector<std::string> arg;
-		std::string token;
+		parseLine(line, command, arg);
 
-		while (lineStream >> token) {
-			if (token[0] == ':') {
-				token.erase(0, 1);
-
-				std::string rest;
-				std::getline(lineStream, rest);
-
-				token += rest;
-				arg.push_back(token);
-				break;
-			} 
-            else {
-				arg.push_back(token);
-			}
-		}
-
-		if (command == "PASS" && c->getStatus() == NONE)
+		LOG_STATUS status= c->getStatus();
+		if (command == "PASS" && status == NONE)
 			this->cmdPass(arg, c);
-		else if (command == "NICK" && (c->getStatus() == PASSWORD || c->getStatus() == USERNAME))
+		else if (command == "NICK" && (status == PASSWORD || status == USERNAME))
 			this->cmdNick(arg, c, false);
-		else if (command == "USER" && (c->getStatus() == PASSWORD || c->getStatus() == NICKNAME))
+		else if (command == "USER" && (status == PASSWORD || status == NICKNAME))
 			this->cmdUser(arg, c);
-		else if (c->getStatus() == FULL) {
-			if (command == "PING")
-				this->cmdPing(arg, c);
-			else if (command == "NICK")
-				this->cmdNick(arg, c, true);
-			else if (command == "USER")
-			    this->cmdUser(arg, c);
-			else if (command == "JOIN")
-				this->cmdJoin(arg, c);
-		}
-		else {
-			std::string msg = ":localhost 451 * :You have not registered\r\n";
-			send(c->getFd(), msg.c_str(), msg.length(), 0);
-		}
+		else if (status != FULL)
+			sendMsg(c, ":localhost 451 * :You have not registered");
+		else if (command == "PING")
+			this->cmdPing(arg, c);
+		else if (command == "NICK")
+			this->cmdNick(arg, c, true);
+		else if (command == "USER")
+			this->cmdUser(arg, c);
+		else if (command == "JOIN")
+			this->cmdJoin(arg, c);
 	}
 }
 
@@ -165,15 +176,60 @@ void Command::cmdPing(std::vector<std::string> arg, Client *c) {
 	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
-void	Command::cmdJoin(std::vector<std::string> arg, Client *c) {
-	std::map<std::string, Channel*>::const_iterator it = this->_server.getChannel().find(arg[0]);
-	if (it == this->_server.getChannel().end()) {
-		Channel *newChannel = new Channel(arg[0], c);
-		this->_server.addChannel(arg[0], newChannel);
-		newChannel->returnJOIN(c, "new");
-	}
-	else {
-		it->second->returnJOIN(c, "exists");
-	}
+static std::string joinError(Channel *ch, Client *c, const std::string &key) {
+	std::string target = " " + c->getNick() + " " + ch->getName();
+
+	if (ch->isInviteOnly() && !ch->isInvited(c))
+		return ":ircserv 473" + target + " :Cannot join channel (+i)";
+	if (!ch->getKey().empty() && ch->getKey() != key)
+		return ":ircserv 475" + target + " :Cannot join channel (+k)";
+	if (ch->getLimit() > 0 && ch->getSize() >= ch->getLimit())
+		return ":ircserv 471" + target + " :Cannot join channel (+l)";
+	return "";
 }
 
+void Command::joinChannel(const std::string &name, const std::string &key, Client *c) {
+	const std::map<std::string, Channel*> &channels = this->_server.getChannel();
+	std::map<std::string, Channel*>::const_iterator it = channels.find(name);
+
+	if (name.size() < 2 || name[0] != '#') {
+		sendMsg(c, ":ircserv 403 " + c->getNick() + " " + name + " :No such channel");
+		return;
+	}
+	if (it == channels.end()) {
+		Channel *newChannel = new Channel(name, c);
+		this->_server.addChannel(name, newChannel);
+		newChannel->returnJOIN(c);
+		return;
+	}
+	Channel *channel = it->second;
+	if (channel->inChannel(c))
+		return;
+	std::string error = joinError(channel, c, key);
+	if (!error.empty()) {
+		sendMsg(c, error);
+		return;
+	}
+	channel->uninvite(c);
+	channel->addClient(c);
+	channel->returnJOIN(c);
+}
+
+void Command::cmdJoin(std::vector<std::string> arg, Client *c) {
+	if (arg.empty() || splitArg(arg[0]).empty()) {
+		sendMsg(c, ":ircserv 461 " + c->getNick() + " JOIN :Not enough parameters");
+		return;
+	}
+
+	std::vector<std::string> names = splitArg(arg[0]);
+	std::vector<std::string> keys;
+	if (arg.size() > 1)
+		keys = splitArg(arg[1]);
+
+	for (size_t i = 0; i < names.size(); ++i) {
+		if (i < keys.size())
+			this->joinChannel(names[i], keys[i], c);
+		else
+			this->joinChannel(names[i], "", c);
+	}
+}
