@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   Command.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:37:32 by mathys            #+#    #+#             */
 /*   Updated: 2026/10/07 21:22:26 by mcomin           ###   ########.fr       */
@@ -32,6 +32,7 @@ class Command {
 		void	cmdUser(std::vector<std::string> pass, Client *c);
 		
 		void	cmdPing(std::vector<std::string> arg, Client *c);
+		void	cmdMsg(std::vector<std::string> arg, Client *c);
 	public:
 		Command(Server &server);
 		~Command();

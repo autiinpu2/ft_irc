@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   Command.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
 /*   Updated: 2026/10/08 00:17:25 by mcomin           ###   ########.fr       */
@@ -18,6 +18,7 @@
 
 # include <algorithm>
 # include <sstream>
+# include <string>
 # include <sys/socket.h>
 
 static void sendMsg(Client *c, const std::string &msg) {
@@ -50,16 +51,21 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 			this->cmdNick(arg, c, false);
 		else if (command == "USER" && (status == PASSWORD || status == NICKNAME))
 			this->cmdUser(arg, c);
+		else if (c->getStatus() == FULL) {
+			if (command == "PING")
+				this->cmdPing(arg, c);
+			else if (command == "NICK")
+				this->cmdNick(arg, c, true);
+			else if (command == "USER")
+			    this->cmdUser(arg, c);
+			else if (command == "JOIN")
+				this->cmdJoin(arg, c);
+			else if (command == "PRIVMSG")
+				this->cmdMsg(arg, c);
+		}
 		else if (status != FULL)
 			sendMsg(c, ":localhost 451 * :You have not registered");
-		else if (command == "PING")
-			this->cmdPing(arg, c);
-		else if (command == "NICK")
-			this->cmdNick(arg, c, true);
-		else if (command == "USER")
-			this->cmdUser(arg, c);
-		else if (command == "JOIN")
-			this->cmdJoin(arg, c);
+
 	}
 }
 
@@ -190,6 +196,63 @@ void Command::joinChannel(const std::string &name, const std::string &key, Clien
 	channel->returnJOIN(c);
 }
 
+void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
+	std::string msg = arg.back();
+	arg.pop_back();
+
+	std::vector<std::string> targets;
+	for (std::vector<std::string>::iterator it = arg.begin(); it != arg.end(); ++it) {
+		std::stringstream ss(*it);
+		std::string target;
+		while (std::getline(ss, target, ',')) {
+			if (!target.empty()) {
+				targets.push_back(target);
+			}
+		}
+	}
+
+	std::vector<Client*> clients = this->_server.getClients();
+
+	for (std::vector<std::string>::iterator iter = targets.begin(); iter != targets.end(); ++iter) {
+		if (!iter->empty() && (*iter)[0] == '#')
+		{
+			std::map<std::string, Channel*> channels = this->_server.getChannel();
+			std::map<std::string, Channel*>::iterator it = channels.find(*iter);
+
+			if (it != channels.end()) {
+				Channel* chan = it->second;
+				chan->broadcast(":" + c->getNick() + " PRIVMSG " + chan->getName() + " :" + msg + "\r\n", c);
+			} else {
+				std::string send_msg = ":localhost 403 " + c->getNick() + " " + *iter + " :No such channel\r\n";
+				send(c->getFd(), send_msg.c_str(), send_msg.length(), 0);
+			}
+		}
+		else {
+			Client* recv = NULL;
+
+			for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
+				Client* currentClient = *it;
+				if (currentClient != NULL && currentClient->getNick() == *iter) {
+					recv = currentClient;
+					break;
+				}
+			}
+
+			if (recv != NULL) {
+				std::string send_msg = ":" + c->getNick() + " PRIVMSG " + recv->getNick() + " :" + msg + "\r\n";
+				send(recv->getFd(), send_msg.c_str(), send_msg.length(), 0);
+			} else {
+				std::string send_msg = ":localhost 401 " + c->getNick() + " " + *iter + " :No such nick/channel\r\n";
+				send(c->getFd(), send_msg.c_str(), send_msg.length(), 0);
+			}
+		}
+	}
+}
+
+void Command::reply(Client *c, const std::string &msg) {
+	std::string m = msg + "\r\n";
+	send(c->getFd(), m.c_str(), m.length(), 0);
+}
 void Command::cmdJoin(std::vector<std::string> args, Client *c) {
 	if (args.empty()) {
 		sendMsg(c, ":ircserv 461 " + c->getNick() + " JOIN :Not enough parameters");
