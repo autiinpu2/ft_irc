@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/08 00:17:25 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/08 01:16:58 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -221,7 +221,7 @@ void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
 
 			if (it != channels.end()) {
 				Channel* chan = it->second;
-				chan->broadcast(":" + c->getNick() + " PRIVMSG " + chan->getName() + " :" + msg + "\r\n", c);
+				chan->broadcast(msg, c);
 			} else {
 				std::string send_msg = ":localhost 403 " + c->getNick() + " " + *iter + " :No such channel\r\n";
 				send(c->getFd(), send_msg.c_str(), send_msg.length(), 0);
@@ -249,10 +249,6 @@ void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
 	}
 }
 
-void Command::reply(Client *c, const std::string &msg) {
-	std::string m = msg + "\r\n";
-	send(c->getFd(), m.c_str(), m.length(), 0);
-}
 void Command::cmdJoin(std::vector<std::string> args, Client *c) {
 	if (args.empty()) {
 		sendMsg(c, ":ircserv 461 " + c->getNick() + " JOIN :Not enough parameters");

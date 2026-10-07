@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 03:25:15 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/08 00:18:42 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/08 01:16:36 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -140,6 +140,7 @@ void	Channel::broadcast(std::string msg, Client *sender)
 		}
 	}
 }
+
 void Channel::reply(Client *c, const std::string &msg) {
 	std::string m = msg + "\r\n";
 	send(c->getFd() , m.c_str(), m.length(), 0);

@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/06 00:31:55 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/10/08 00:59:58 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@
 
 # include <cerrno>
 # include <sys/socket.h>
+# include <algorithm>
 
 Server* Server::_instance = NULL;
 
@@ -127,8 +128,12 @@ void Server::handleMsg(fd_set &rfds) {
 		if (bytes_read <= 0) {
 			this->setNbClient(-1);
 			std::cout << "\033[1;31mClient disconnected. (FD: " << c->getFd() << ") Remaining: " << this->getNbClient() << "\033[0m" << std::endl;
-			delete c;
+			
+			std::vector<std::string>::iterator it = std::find(this->_used_nicks.begin(), this->_used_nicks.end(), c->getNick());
+			if (it != this->_used_nicks.end())
+				this->_used_nicks.erase(it);
 			this->_clients.erase(this->_clients.begin() + i);
+			delete c;
 			--i;
 			continue;
 		}
