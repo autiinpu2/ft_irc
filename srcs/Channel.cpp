@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 03:25:15 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/08 00:01:20 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/08 00:18:42 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include <sys/socket.h>
 #include "Client.hpp"
 
-Channel::Channel(const std::string &n_channel, Client *c, const std::string key) : _name(n_channel), _topic(""), _key(key), _limit(0), _invite_only(false) {
+Channel::Channel(const std::string &n_channel, Client *c, const std::string key) : _name(n_channel), _topic(""), _key(key), _limit(10), _invite_only(false) {
 	this->_clients.insert(c);
 	this->_operators.insert(c);
 	this->_mode = "+nt";

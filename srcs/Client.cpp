@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:23:46 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/07 21:35:29 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/08 00:16:10 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,6 +44,10 @@ void Client::setUsername(std::string user) {
 
 void Client::setRealname(std::string name) {
 	this->_real_name = name;
+}
+
+void	Client::setNbChannels(size_t nb) {
+	this->_nb_channels += nb;
 }
 
 const std::string &Client::getNick(void) const {

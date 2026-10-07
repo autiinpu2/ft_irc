@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/08 00:01:14 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/08 00:03:12 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,8 +41,8 @@ class Channel {
 		const std::string	&getKey(void) const;
 		size_t				getLimit(void) const;
 		size_t				getSize(void) const;
-		bool				isOperator(Client *c) const;
 		
+		bool				isOperator(Client *c) const;
 		bool				isInviteOnly(void) const;
 		bool				isInvited(Client *c) const;
 		

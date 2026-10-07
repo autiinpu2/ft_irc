@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:20:13 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/06 01:32:59 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/08 00:15:11 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,6 +32,7 @@ class Client {
 		std::string 	_username;
 		std::string 	_real_name;
 		LOG_STATUS		_status;
+		size_t			_nb_channels;
 	public:
 		Client(int fd);
 		~Client();
@@ -46,4 +47,5 @@ class Client {
 	void 				setNickname(std::string nick);
 	void 				setUsername(std::string user);
 	void 				setRealname(std::string name);
+	void				setNbChannels(size_t nb);
 };
