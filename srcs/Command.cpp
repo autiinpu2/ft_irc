@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/07 03:56:10 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/07 23:24:33 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 #include "Server.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
+#include "Parsing.hpp"
 
 # include <algorithm>
 # include <sstream>
@@ -24,37 +25,9 @@ static void sendMsg(Client *c, const std::string &msg) {
 	send(c->getFd(), m.c_str(), m.length(), 0);
 }
 
-static std::vector<std::string> splitArg(const std::string &s) {
-	std::vector<std::string> 	res;
-	std::stringstream 			ss(s);
-	std::string 				arg;
-
-	while (std::getline(ss, arg, ',')) {
-		if (!arg.empty())
-			res.push_back(arg);
-	}
-	return res;
-}
-
 Command::Command(Server &server) : _server(server) {}
 
 Command::~Command() {}
-
-static void parseLine(const std::string &line, std::string &command, std::vector<std::string> &arg) {
-	std::stringstream 	ss(line);
-	std::string 		token;
-
-	ss >> command;
-	while (ss >> token) {
-		if (token[0] == ':') {
-			std::string rest;
-			std::getline(ss, rest);
-			arg.push_back(token.substr(1) + rest);
-			break;
-		}
-		arg.push_back(token);
-	}
-}
 
 void Command::handleCmd(const std::string &buffer, Client *c) {
 	std::stringstream 	stream(buffer);
@@ -68,7 +41,7 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 
 		std::string command;
 		std::vector<std::string> arg;
-		parseLine(line, command, arg);
+		Parsing::parseLine(line, command, arg);
 
 		LOG_STATUS status= c->getStatus();
 		if (command == "PASS" && status == NONE)
@@ -98,7 +71,7 @@ void Command::cmdPass(std::vector<std::string> arg, Client *c) {
 	}
 	if (arg[0] == this->_server.getPassword()) {
 		c->setStatus(PASSWORD);
-		std::cout << "New client logged" << std::endl;
+		std::cout << "\033[1;32mNew client logged!\033[0m" << std::endl;
 	}
 	else {
 		std::string msg = ":localhost 464 * :Password incorrect\r\n";
@@ -192,12 +165,12 @@ void Command::joinChannel(const std::string &name, const std::string &key, Clien
 	const std::map<std::string, Channel*> &channels = this->_server.getChannel();
 	std::map<std::string, Channel*>::const_iterator it = channels.find(name);
 
-	if (name.size() < 2 || name[0] != '#') {
+	if (name.size() < 2 || name[0] != '#' || name.size() > 200 || name.find("^G") != std::string::npos) {
 		sendMsg(c, ":ircserv 403 " + c->getNick() + " " + name + " :No such channel");
 		return;
 	}
 	if (it == channels.end()) {
-		Channel *newChannel = new Channel(name, c);
+		Channel *newChannel = new Channel(name, c, key);
 		this->_server.addChannel(name, newChannel);
 		newChannel->returnJOIN(c);
 		return;
@@ -215,16 +188,22 @@ void Command::joinChannel(const std::string &name, const std::string &key, Clien
 	channel->returnJOIN(c);
 }
 
-void Command::cmdJoin(std::vector<std::string> arg, Client *c) {
-	if (arg.empty() || splitArg(arg[0]).empty()) {
+void Command::cmdJoin(std::vector<std::string> args, Client *c) {
+	if (args.empty()) {
 		sendMsg(c, ":ircserv 461 " + c->getNick() + " JOIN :Not enough parameters");
 		return;
 	}
 
-	std::vector<std::string> names = splitArg(arg[0]);
+	std::vector<std::string> names = Parsing::splitArg(args[0]);
 	std::vector<std::string> keys;
-	if (arg.size() > 1)
-		keys = splitArg(arg[1]);
+
+	if (args.size() > 1)
+		keys = Parsing::splitArg(args[1]);
+
+	if (Parsing::vectorEmpty(names) || Parsing::vectorEmpty(keys)) {
+		sendMsg(c, ":ircserv 403 " + c->getNick() + " " + args[0] + " :No such channel");
+		return;
+	}
 
 	for (size_t i = 0; i < names.size(); ++i) {
 		if (i < keys.size())

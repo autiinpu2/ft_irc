@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mathys <mathys@student.42.fr>              +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 03:25:15 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/07 02:44:27 by mathys           ###   ########.fr       */
+/*   Updated: 2026/10/07 23:22:22 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,7 @@
 #include <sys/socket.h>
 #include "Client.hpp"
 
-Channel::Channel(const std::string &n_channel, Client *c) : _name(n_channel), _topic(""), _key(""), _limit(0), _invite_only(false) {
+Channel::Channel(const std::string &n_channel, Client *c, const std::string key) : _name(n_channel), _topic(""), _key(key), _limit(0), _invite_only(false) {
 	this->_clients.insert(c);
 	this->_operator = c;
 	this->_mode = "+nt";
@@ -52,6 +52,7 @@ std::string Channel::getClients(void) const {
 const std::string &Channel::getTopic(void) const {
 	return this->_topic;
 }
+
 
 const std::string &Channel::getKey(void) const {
 	return this->_key;
