@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/06 01:10:03 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/10/06 03:25:53 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 # include <algorithm>
 # include <sstream>
-#include <string>
+# include <string>
 # include <sys/socket.h>
 
 Command::Command(Server &server) : _server(server) {}
@@ -182,8 +182,7 @@ void	Command::cmdJoin(std::vector<std::string> arg, Client *c) {
 	}
 }
 
-
-void Command::cmdMsg(std::vector<std::string> arg, Client *sender) {
+void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
 	std::string msg = arg.back();
 	arg.pop_back();
 
@@ -201,22 +200,37 @@ void Command::cmdMsg(std::vector<std::string> arg, Client *sender) {
 	std::vector<Client*> clients = this->_server.getClients();
 
 	for (std::vector<std::string>::iterator iter = targets.begin(); iter != targets.end(); ++iter) {
-		Client* recv = NULL;
+		if (!iter->empty() && (*iter)[0] == '#')
+		{
+			std::map<std::string, Channel*> channels = this->_server.getChannel();
+			std::map<std::string, Channel*>::iterator it = channels.find(*iter);
 
-		for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
-			Client* currentClient = *it;
-			if (currentClient != NULL && currentClient->getNick() == *iter) {
-				recv = currentClient;
-				break;
+			if (it != channels.end()) {
+				Channel* chan = it->second;
+				chan->broadcast(":" + c->getNick() + " PRIVMSG " + chan->getName() + " :" + msg + "\r\n", c);
+			} else {
+				std::string send_msg = ":localhost 403 " + c->getNick() + " " + *iter + " :No such channel\r\n";
+				send(c->getFd(), send_msg.c_str(), send_msg.length(), 0);
 			}
 		}
+		else {
+			Client* recv = NULL;
 
-		if (recv != NULL) {
-			std::string send_msg = ":" + sender->getNick() + " PRIVMSG " + recv->getNick() + " :" + msg + "\r\n";
-			send(recv->getFd(), send_msg.c_str(), send_msg.length(), 0);
-		} else {
-			std::string send_msg = ":localhost 401 " + sender->getNick() + " " + *iter + " :No such nick/channel\r\n";
-			send(sender->getFd(), send_msg.c_str(), send_msg.length(), 0);
+			for (std::vector<Client*>::iterator it = clients.begin(); it != clients.end(); ++it) {
+				Client* currentClient = *it;
+				if (currentClient != NULL && currentClient->getNick() == *iter) {
+					recv = currentClient;
+					break;
+				}
+			}
+
+			if (recv != NULL) {
+				std::string send_msg = ":" + c->getNick() + " PRIVMSG " + recv->getNick() + " :" + msg + "\r\n";
+				send(recv->getFd(), send_msg.c_str(), send_msg.length(), 0);
+			} else {
+				std::string send_msg = ":localhost 401 " + c->getNick() + " " + *iter + " :No such nick/channel\r\n";
+				send(c->getFd(), send_msg.c_str(), send_msg.length(), 0);
+			}
 		}
 	}
 }

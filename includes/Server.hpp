@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:49 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/06 00:31:40 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/10/06 02:54:41 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -61,6 +61,5 @@ class Server {
 		const std::map<std::string, Channel*> &getChannel(void) const;
 		std::vector<Client*> &getClients (void);
 		void			addChannel(const std::string &n_channel, Channel *ch);
-
 		void			setNbClient(int nb);
 };

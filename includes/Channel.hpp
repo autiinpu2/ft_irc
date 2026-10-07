@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Channel.hpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/28 05:36:17 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/10/06 03:10:01 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 # include <set>
 # include <string>
 # include <vector>
+
+# include "Client.hpp"
  
 class Client;
  
@@ -32,5 +34,5 @@ class Channel {
 		void				removeClient(Client *c);
 		bool				inChannel(Client *c) const;
 		bool				isEmpty(void) const;
+		void				broadcast(std::string msg, Client *sender);
 };
- 
