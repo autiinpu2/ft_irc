@@ -20,4 +20,5 @@ class Client;
 
 bool isDigits(const std::string &s);
 int max_fd(std::vector<Client*> &clients);
- 
+void err_msg(int err_code, std::string msg, Client *c);
+size_t stringToSizeT(const std::string &str);
