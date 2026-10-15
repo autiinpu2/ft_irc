@@ -14,10 +14,11 @@
 #include <sys/socket.h>
 #include "Client.hpp"
 
-Channel::Channel(const std::string &n_channel, Client *c, const std::string key) : _name(n_channel), _topic(""), _key(key), _limit(10), _invite_only(false) {
+Channel::Channel(const std::string &n_channel, Client *c, const std::string key) : _name(n_channel), _topic(""), _key(key), _limit(0), _invite_only(false), _topic_op(false) {
 	this->_clients.insert(c);
 	this->_operators.insert(c);
-	this->_mode = "+nt";
+	this->_mode.insert('n');
+	this->_mode.insert('t');
 }
 
 Channel::~Channel() {}
@@ -26,7 +27,7 @@ const std::string &Channel::getName(void) const {
 	return this->_name;
 }
 
-const std::string	&Channel::getMode(void) const {
+const std::set<char> &Channel::getMode(void) const {
 	return this->_mode;		
 }
 
@@ -62,6 +63,14 @@ size_t Channel::getSize(void) const {
 	return this->_clients.size();
 }
 
+bool Channel::getInviteOnly(void) const {
+	return this->_invite_only;
+}
+
+bool Channel::getTopicOperator(void) const {
+	return this->_topic_op;
+}
+
 bool	Channel::isOperator(Client *c) const {
 	if (this->_operators.find(c) != this->_operators.end())
 		return true;
@@ -88,6 +97,14 @@ void Channel::setInviteOnly(bool value) {
 	this->_invite_only = value;
 }
 
+void Channel::setTopicOperator(bool value) {
+	this->_topic_op = value;
+}
+
+void Channel::setTopic(std::string value) {
+	this->_topic = value;
+}
+
 void Channel::invite(Client *c) {
 	this->_invited.insert(c);
 }
@@ -102,6 +119,7 @@ void Channel::addClient(Client *c) {
 
 void Channel::removeClient(Client *c) {
 	this->_clients.erase(c);
+	this->_operators.erase(c);
 }
 
 bool Channel::inChannel(Client *c) const {
@@ -111,7 +129,6 @@ bool Channel::inChannel(Client *c) const {
 bool Channel::isEmpty(void) const {
 	return this->_clients.empty();
 }
-
 
 void	Channel::broadcast(std::string msg, Client *sender)
 {
@@ -126,7 +143,7 @@ void	Channel::broadcast(std::string msg, Client *sender)
 		}
 	}
 	if (is_in_chan == false) {
-		std::string send_msg = ":localhost 404 " + sender->getNick() + " " + this->getName() + " :Cannot send to channel\r\n";
+		std::string send_msg = ":ircserv 404 " + sender->getNick() + " " + this->getName() + " :Cannot send to channel\r\n";
 		send(sender->getFd(), send_msg.c_str(), send_msg.length(), 0);
 		return;
 	}
@@ -160,4 +177,20 @@ void Channel::returnJOIN(Client *c) {
 		this->reply(c, ":ircserv 332 " + c->getNick() + " " + this->_name + " :" + this->_topic);
 	this->reply(c, ":ircserv 353 " + c->getNick() + " = " + this->_name + " :" + this->getClients());
 	this->reply(c, ":ircserv 366 " + c->getNick() + " " + this->_name + " :End of /NAMES list.");
+}
+
+void	Channel::addOperator(Client *c) {
+	this->_operators.insert(c);
+}
+
+void	Channel::removeOperator(Client *c) {
+	this->_operators.erase(c);
+}
+
+void	Channel::addMode(char c) {
+	this->_mode.insert(c);
+}
+
+void	Channel::removeMode(char c) {
+	this->_mode.erase(c);
 }
