@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/03 01:07:47 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/04 00:46:17 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,13 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 				this->cmdTopic(arg, c);
 			else if (command == "KICK")
 				this->cmdKick(arg, c);
+			else if (command == "PASS")
+				sendMsg(c, ":ircserv 462 * :You may not reregister");
+			else {
+				std::stringstream ss;
+				ss << ":ircserv 421 * " << command << " :Unknown command";
+				sendMsg(c, ss.str());
+			}
 		}
 		else if (status != FULL)
 			sendMsg(c, ":ircserv 451 * :You have not registered");
@@ -102,6 +109,14 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 		send(c->getFd(), err.c_str(), err.length(), 0);
 		return;
 	}
+	for (size_t i = 0; i < nick.size(); i++) {
+		if (nick[0].find('#') != std::string::npos) {
+			std::stringstream ss;
+			ss << ":ircserv 432 * " << nick[0] << " :Erroneus nickname\r\n";
+			send(c->getFd(), ss.str().c_str(), ss.str().size(), 0);
+			return;
+		}
+	}
 
 	std::vector<std::string> &used_nicks = this->_server.getUsedNicks();
 	std::vector<std::string>::iterator it = std::find(used_nicks.begin(), used_nicks.end(), nick[0]);
@@ -115,22 +130,26 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 		used_nicks.push_back(nick[0]);
 		c->setNickname(nick[0]);
 		if (is_logged) {
-			if (!old_nick.empty()) {
-				std::vector<std::string>::iterator it_old = std::find(used_nicks.begin(), used_nicks.end(), old_nick);
-				if (it_old != used_nicks.end())
-					used_nicks.erase(it_old);
+			std::map<std::string,Channel*> chs =  this->_server.getChannel();
+			for (std::map<std::string,Channel*>::const_iterator it = chs.begin(); it != chs.end(); ++it) {
+				if (it->second->getClients().find(c->getNick()) != std::string::npos) {
+					if (!old_nick.empty()) {
+						std::vector<std::string>::iterator it_old = std::find(used_nicks.begin(), used_nicks.end(), old_nick);
+						if (it_old != used_nicks.end())
+							used_nicks.erase(it_old);
+					}
+					std::string success_msg = ":" + old_nick + "!user@ircserv NICK :" + nick[0] + "\r\n";
+					it->second->replyALL(success_msg.c_str());
+				}
 			}
-			std::string success_msg = ":" + old_nick + "!user@ircserv NICK :" + nick[0] + "\r\n";
-			send(c->getFd(), success_msg.c_str(), success_msg.length(), 0);
 		}
 		else if (c->getStatus() == USERNAME) {
 			c->setStatus(FULL);
 			std::string welcome = ":ircserv 001 " + c->getNick() + " :Welcome to the IRC Network\r\n";
 			send(c->getFd(), welcome.c_str(), welcome.length(), 0);
-		}
-		else {
+		} 
+		else 
 			c->setStatus(NICKNAME);
-		}
 	}
 }
 
