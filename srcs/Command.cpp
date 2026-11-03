@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Command.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/03 01:07:47 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/03 07:12:12 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,10 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 				this->cmdTopic(arg, c);
 			else if (command == "KICK")
 				this->cmdKick(arg, c);
+			else if (command == "PASS")
+				sendMsg(c, ":ircserv 462 " + c->getNick() + " :You may not reregister");
+			else
+				sendMsg(c, ":ircserv 421 " + c->getNick() + " " + command + " :Unknown command");
 		}
 		else if (status != FULL)
 			sendMsg(c, ":ircserv 451 * :You have not registered");
@@ -110,7 +114,10 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 		std::string msg = ":ircserv 433 " + c->getNick() + " " + nick[0] + " :Nickname is already in use\r\n";
 		send(c->getFd(), msg.c_str(), msg.length(), 0);
 	}
-	else {
+	else if (nick[0][0] == '#') {
+		std::string msg = ":ircserv 432 " + c->getNick() + " " + nick[0] + " :Erroneus nickname\r\n";
+		send(c->getFd(), msg.c_str(), msg.length(), 0);
+	} else {
 		std::string old_nick = c->getNick();
 		used_nicks.push_back(nick[0]);
 		c->setNickname(nick[0]);
@@ -160,15 +167,18 @@ void Command::cmdUser(std::vector<std::string> arg, Client *c) {
 }
 
 void Command::cmdPing(std::vector<std::string> arg, Client *c) {
-	if (arg.empty())
+	if (arg.empty()) {
+		std::string err = ":ircserv 409 " + c->getNick() + " :No origin specified\r\n";
+		send(c->getFd(), err.c_str(), err.length(), 0);
 		return;
+	}
 	std::string msg = ":ircserv PONG * :" + arg[0] + "\r\n";
 	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
 static std::string joinError(Channel *ch, Client *c, const std::string &key) {
 	std::string target = " " + c->getNick() + " " + ch->getName();
-
+	
 	if (ch->isInviteOnly() && !ch->isInvited(c))
 		return ":ircserv 473" + target + " :Cannot join channel (+i)";
 	if (!ch->getKey().empty() && ch->getKey() != key)
@@ -208,6 +218,10 @@ void Command::joinChannel(const std::string &name, const std::string &key, Clien
 }
 
 void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
+	if (arg.size() != 2) {
+		sendMsg(c, ":ircserv 461 " + c->getNick() + " JOIN :Not enough parameters");
+		return;
+	}
 	std::string msg = arg.back();
 	arg.pop_back();
 
@@ -593,15 +607,15 @@ void	Command::cmdInvite(std::vector<std::string> arg, Client *c) {
 }
 
 void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
-	if (arg.size() != 2) {
+	if (arg.size() < 2 || arg.size() > 3) {
 		err_msg(461, "KICK :Not enough parameters", c);
 		return ;
 	}
-	std::string nickname = arg[1];
 	std::string channel_name = arg[0];
+	std::string nickname = arg[1];
 	std::string reason = "";
 	if (arg.size() == 3)
-		std::string reason = arg[3];
+		reason = arg[2];
 	Client *client = NULL;
 	Channel *channel;
 
@@ -619,7 +633,6 @@ void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
 		err_msg(401, nickname + " :No such nick/channel", c);
 		return ;
 	}
-
 	if (iter != serv_chan.end()) {
 		channel = iter->second;
 	} else {
@@ -632,6 +645,10 @@ void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
 	}
 	if (!channel->isOperator(c)) {
 		err_msg(482, channel_name + " :You're not channel operator", c);
+		return ;
+	}
+	if (!channel->inChannel(client)) {
+		err_msg(441, client->getNick() + " " + channel_name + " :They aren't on that channel", c);
 		return ;
 	}
 	channel->removeClient(client);
