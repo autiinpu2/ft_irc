@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Command.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/10/08 01:16:58 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/03 01:07:47 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -71,6 +71,8 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 				this->cmdInvite(arg, c);
 			else if (command == "TOPIC")
 				this->cmdTopic(arg, c);
+			else if (command == "KICK")
+				this->cmdKick(arg, c);
 		}
 		else if (status != FULL)
 			sendMsg(c, ":ircserv 451 * :You have not registered");
@@ -587,5 +589,56 @@ void	Command::cmdInvite(std::vector<std::string> arg, Client *c) {
 	channel->invite(client);
 	err_msg(341, nickname + " " + channel_name, c);
 	std::string msg = ":" + c->getNick() + "!user@ircserv INVITE " + nickname + " :" + channel_name + "\r\n";
+	send(client->getFd(), msg.c_str(), msg.length(), 0);
+}
+
+void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
+	if (arg.size() != 2) {
+		err_msg(461, "KICK :Not enough parameters", c);
+		return ;
+	}
+	std::string nickname = arg[1];
+	std::string channel_name = arg[0];
+	std::string reason = "";
+	if (arg.size() == 3)
+		std::string reason = arg[3];
+	Client *client = NULL;
+	Channel *channel;
+
+	std::map<std::string, Channel*> serv_chan = this->_server.getChannel();
+	std::map<std::string, Channel*>::iterator iter = serv_chan.find(channel_name);
+
+	std::vector<Client*> connected_clients = this->_server.getClients();
+	for (std::vector<Client*>::iterator it = connected_clients.begin(); it != connected_clients.end(); ++it) {
+		if ((*it)->getNick() == nickname) {
+			client = *it;
+			break;
+		}
+	}
+	if (client == NULL) {
+		err_msg(401, nickname + " :No such nick/channel", c);
+		return ;
+	}
+
+	if (iter != serv_chan.end()) {
+		channel = iter->second;
+	} else {
+		err_msg(403, channel_name + " :No such channel", c);
+		return ;
+	}
+	if (!channel->inChannel(c)) {
+		err_msg(442, channel_name + " :You're not on that channel", c);
+		return ;
+	}
+	if (!channel->isOperator(c)) {
+		err_msg(482, channel_name + " :You're not channel operator", c);
+		return ;
+	}
+	channel->removeClient(client);
+	std::string msg;
+	if (reason.empty())
+		msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + c->getNick() + "\r\n";
+	else 
+		msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + reason + "\r\n";
 	send(client->getFd(), msg.c_str(), msg.length(), 0);
 }
