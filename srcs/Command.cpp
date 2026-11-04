@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/04 00:59:46 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/04 04:16:49 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,8 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 				this->cmdKick(arg, c);
 			else if (command == "PASS")
 				sendMsg(c, ":ircserv 462 * :You may not reregister");
+			else if (command == "QUIT")
+				this->cmdQuit(arg, c);
 			else {
 				std::stringstream ss;
 				ss << ":ircserv 421 * " << command << " :Unknown command";
@@ -653,11 +655,29 @@ void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
 		err_msg(482, channel_name + " :You're not channel operator", c);
 		return ;
 	}
-	channel->removeClient(client);
 	std::string msg;
 	if (reason.empty())
-		msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + c->getNick() + "\r\n";
+	msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + c->getNick() + "\r\n";
 	else 
-		msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + reason + "\r\n";
+	msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + reason + "\r\n";
 	send(client->getFd(), msg.c_str(), msg.length(), 0);
+	client->setNbChannels(-1);
+	channel->removeClient(client);
+}
+
+void Command::cmdQuit(std::vector<std::string> arg, Client *c) {
+	std::string reason = "Client Quit";
+	
+	if (!arg.empty())
+		reason = arg[0];
+	 
+	std::map<std::string,Channel*> chs =  this->_server.getChannel();
+	for (std::map<std::string,Channel*>::const_iterator it = chs.begin(); it != chs.end(); ++it) {
+		if (it->second->getClients().find(c->getNick()) != std::string::npos) {
+			it->second->removeClient(c);
+			std::string msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv QUIT :" + reason + "\r\n";
+			it->second->replyALL(msg);
+			c->setNbChannels(-1);
+		}
+	}	
 }
