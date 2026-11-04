@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/04 03:52:04 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/04 04:16:49 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -79,6 +79,8 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 				this->cmdKick(arg, c);
 			else if (command == "PART")
 				this->cmdPart(arg, c);
+      else if (command == "QUIT")
+				this->cmdQuit(arg, c);
 			else if (command == "PONG")
 				continue;
 			else if (command == "PASS")	
@@ -100,7 +102,7 @@ void Command::cmdPass(std::vector<std::string> arg, Client *c) {
 	}
 	if (arg[0] == this->_server.getPassword()) {
 		c->setStatus(PASSWORD);
-		std::cout << "\033[1;32mNew client logged!\033[0m" << std::endl;
+		std::cout <<"\033[1;31m[INFO] New client authenticated\033[0m" << std::endl;
 	}
 	else {
 		std::string msg = ":ircserv 464 * :Password incorrect\r\n";
@@ -116,11 +118,12 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 		send(c->getFd(), err.c_str(), err.length(), 0);
 		return;
 	}
-	std::string nickname = nick[0];
-	for (int i = 0; nickname[i]; i++) {
-		if (nickname[i] == ' ') {
-			std::string msg = ":ircserv 432 " + c->getNick() + " " + nickname + " :Erroneus nickname\r\n";
-			send(c->getFd(), msg.c_str(), msg.length(), 0);
+	for (size_t i = 0; i < nick.size(); i++) {
+		if (nick[0].find('#') != std::string::npos) {
+			std::stringstream ss;
+			ss << ":ircserv 432 * " << nick[0] << " :Erroneus nickname\r\n";
+			send(c->getFd(), ss.str().c_str(), ss.str().size(), 0);
+			return;
 		}
 	}
 
@@ -139,22 +142,26 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 		used_nicks.push_back(lowerstring(nickname));
 		c->setNickname(nickname);
 		if (is_logged) {
-			if (!old_nick.empty()) {
-				std::vector<std::string>::iterator it_old = std::find(used_nicks.begin(), used_nicks.end(), lowerstring(old_nick));
-				if (it_old != used_nicks.end())
-					used_nicks.erase(it_old);
+			std::map<std::string,Channel*> chs =  this->_server.getChannel();
+			for (std::map<std::string,Channel*>::const_iterator it = chs.begin(); it != chs.end(); ++it) {
+				if (it->second->getClients().find(c->getNick()) != std::string::npos) {
+					if (!old_nick.empty()) {
+						std::vector<std::string>::iterator it_old = std::find(used_nicks.begin(), used_nicks.end(), old_nick);
+						if (it_old != used_nicks.end())
+							used_nicks.erase(it_old);
+					}
+					std::string success_msg = ":" + old_nick + "!user@ircserv NICK :" + nick[0] + "\r\n";
+					it->second->replyALL(success_msg.c_str());
+				}
 			}
-			std::string success_msg = ":" + old_nick + "!user@ircserv NICK :" + nickname + "\r\n";
-			send(c->getFd(), success_msg.c_str(), success_msg.length(), 0);
 		}
 		else if (c->getStatus() == USERNAME) {
 			c->setStatus(FULL);
 			std::string welcome = ":ircserv 001 " + c->getNick() + " :Welcome to the IRC Network\r\n";
 			send(c->getFd(), welcome.c_str(), welcome.length(), 0);
-		}
-		else {
+		} 
+		else 
 			c->setStatus(NICKNAME);
-		}
 	}
 }
 
@@ -664,17 +671,14 @@ void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
 		err_msg(482, channel_name + " :You're not channel operator", c);
 		return ;
 	}
-	if (!channel->inChannel(client)) {
-		err_msg(441, client->getNick() + " " + channel_name + " :They aren't on that channel", c);
-		return ;
-	}
-	channel->removeClient(client);
 	std::string msg;
 	if (reason.empty())
-		msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + c->getNick() + "\r\n";
+	msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + c->getNick() + "\r\n";
 	else 
-		msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + reason + "\r\n";
+	msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + reason + "\r\n";
 	send(client->getFd(), msg.c_str(), msg.length(), 0);
+  client->setNbChannels(-1);
+	channel->removeClient(client);
 }
 
 void	Command::cmdPart(std::vector<std::string> arg, Client *c) {
@@ -699,4 +703,22 @@ void	Command::cmdPart(std::vector<std::string> arg, Client *c) {
 	}
 	channel->removeClient(c);
 	channel->replyALL(":ircserv PART " + channel_name);
+}
+
+
+void Command::cmdQuit(std::vector<std::string> arg, Client *c) {
+	std::string reason = "Client Quit";
+	
+	if (!arg.empty())
+		reason = arg[0];
+	 
+	std::map<std::string,Channel*> chs =  this->_server.getChannel();
+	for (std::map<std::string,Channel*>::const_iterator it = chs.begin(); it != chs.end(); ++it) {
+		if (it->second->getClients().find(c->getNick()) != std::string::npos) {
+			it->second->removeClient(c);
+			std::string msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv QUIT :" + reason + "\r\n";
+			it->second->replyALL(msg);
+			c->setNbChannels(-1);
+		}
+	}	
 }
