@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/04 04:16:49 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/04 05:24:46 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,18 +110,17 @@ void Command::cmdPass(std::vector<std::string> arg, Client *c) {
 	}
 }
 
-#include <iostream>
-#include <cctype>
 void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) {
 	if (nick.empty()) {
 		std::string err = ":ircserv 431 * :No nickname given\r\n";
 		send(c->getFd(), err.c_str(), err.length(), 0);
 		return;
 	}
+	std::string nickname = nick[0];
 	for (size_t i = 0; i < nick.size(); i++) {
-		if (nick[0].find('#') != std::string::npos) {
+		if (nickname.find('#') != std::string::npos || nickname.find(' ') != std::string::npos) {
 			std::stringstream ss;
-			ss << ":ircserv 432 * " << nick[0] << " :Erroneus nickname\r\n";
+			ss << ":ircserv 432 * " << nickname << " :Erroneus nickname\r\n";
 			send(c->getFd(), ss.str().c_str(), ss.str().size(), 0);
 			return;
 		}
@@ -150,7 +149,7 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 						if (it_old != used_nicks.end())
 							used_nicks.erase(it_old);
 					}
-					std::string success_msg = ":" + old_nick + "!user@ircserv NICK :" + nick[0] + "\r\n";
+					std::string success_msg = ":" + old_nick + "!user@ircserv NICK :" + nickname + "\r\n";
 					it->second->replyALL(success_msg.c_str());
 				}
 			}
@@ -662,6 +661,9 @@ void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
 	} else {
 		err_msg(403, channel_name + " :No such channel", c);
 		return ;
+	}
+	if (!channel->inChannel(client)) {
+		err_msg(441, nickname + " " + channel_name + " :They aren't on that channel", c);
 	}
 	if (!channel->inChannel(c)) {
 		err_msg(442, channel_name + " :You're not on that channel", c);

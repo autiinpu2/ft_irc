@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/11/04 04:07:25 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/04 05:33:09 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,6 +110,7 @@ void Server::acceptNewClient(fd_set &rfds) {
 		std::cout <<"\033[1;31m[INFO] New client connected\033[0m" << std::endl;
 		std::cout << "\033[1;31m[INFO] FD: " << fd << ")\033[0m" << std::endl;
 		std::cout << "\033[1;31m[INFO] Remaining: " << this->getNbClient() << ")\033[0m" << std::endl;
+		
 	}
 	catch (std::runtime_error &e) {
 		std::cerr << e.what() << std::endl;
