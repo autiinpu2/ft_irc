@@ -3,7 +3,7 @@
 /*                                                        :::      ::::::::   */
 /*   Command.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
 /*   Updated: 2026/11/04 04:16:49 by mcomin           ###   ########.fr       */
@@ -36,10 +36,14 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 	std::string 		line;
 
 	while (std::getline(stream, line)) {
-		if (!line.empty() && line[line.size() - 1] == '\r')
+		line = c->getbuffer() + line;
+		if (!line.empty() && line[line.size() - 1] == '\r') {
 			line.erase(line.size() - 1);
-		if (line.empty())
+			c->setBuffer("");
+		} else {
+			c->setBuffer(line);
 			continue;
+		}
 
 		std::string command;
 		std::vector<std::string> arg;
@@ -73,15 +77,16 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 				this->cmdTopic(arg, c);
 			else if (command == "KICK")
 				this->cmdKick(arg, c);
-			else if (command == "PASS")
-				sendMsg(c, ":ircserv 462 * :You may not reregister");
-			else if (command == "QUIT")
+			else if (command == "PART")
+				this->cmdPart(arg, c);
+      else if (command == "QUIT")
 				this->cmdQuit(arg, c);
-			else {
-				std::stringstream ss;
-				ss << ":ircserv 421 * " << command << " :Unknown command";
-				sendMsg(c, ss.str());
-			}
+			else if (command == "PONG")
+				continue;
+			else if (command == "PASS")	
+				sendMsg(c, ":ircserv 462 " + c->getNick() + " :You may not reregister");
+			else
+				sendMsg(c, ":ircserv 421 " + c->getNick() + " " + command + " :Unknown command");
 		}
 		else if (status != FULL)
 			sendMsg(c, ":ircserv 451 * :You have not registered");
@@ -105,6 +110,8 @@ void Command::cmdPass(std::vector<std::string> arg, Client *c) {
 	}
 }
 
+#include <iostream>
+#include <cctype>
 void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) {
 	if (nick.empty()) {
 		std::string err = ":ircserv 431 * :No nickname given\r\n";
@@ -121,16 +128,19 @@ void Command::cmdNick(std::vector<std::string> nick, Client *c, bool is_logged) 
 	}
 
 	std::vector<std::string> &used_nicks = this->_server.getUsedNicks();
-	std::vector<std::string>::iterator it = std::find(used_nicks.begin(), used_nicks.end(), nick[0]);
+	std::vector<std::string>::iterator it = std::find(used_nicks.begin(), used_nicks.end(), lowerstring(nickname));
 
 	if (it != used_nicks.end()) {
-		std::string msg = ":ircserv 433 " + c->getNick() + " " + nick[0] + " :Nickname is already in use\r\n";
+		std::string msg = ":ircserv 433 " + c->getNick() + " " + nickname + " :Nickname is already in use\r\n";
 		send(c->getFd(), msg.c_str(), msg.length(), 0);
 	}
-	else {
+	else if (nickname[0] == '#') {
+		std::string msg = ":ircserv 432 " + c->getNick() + " " + nickname + " :Erroneus nickname\r\n";
+		send(c->getFd(), msg.c_str(), msg.length(), 0);
+	} else {
 		std::string old_nick = c->getNick();
-		used_nicks.push_back(nick[0]);
-		c->setNickname(nick[0]);
+		used_nicks.push_back(lowerstring(nickname));
+		c->setNickname(nickname);
 		if (is_logged) {
 			std::map<std::string,Channel*> chs =  this->_server.getChannel();
 			for (std::map<std::string,Channel*>::const_iterator it = chs.begin(); it != chs.end(); ++it) {
@@ -181,19 +191,22 @@ void Command::cmdUser(std::vector<std::string> arg, Client *c) {
 }
 
 void Command::cmdPing(std::vector<std::string> arg, Client *c) {
-	if (arg.empty())
+	if (arg.empty()) {
+		std::string err = ":ircserv 409 " + c->getNick() + " :No origin specified\r\n";
+		send(c->getFd(), err.c_str(), err.length(), 0);
 		return;
+	}
 	std::string msg = ":ircserv PONG * :" + arg[0] + "\r\n";
 	send(c->getFd(), msg.c_str(), msg.length(), 0);
 }
 
 static std::string joinError(Channel *ch, Client *c, const std::string &key) {
 	std::string target = " " + c->getNick() + " " + ch->getName();
-
+	
 	if (ch->isInviteOnly() && !ch->isInvited(c))
 		return ":ircserv 473" + target + " :Cannot join channel (+i)";
-	if (!ch->getKey().empty() && ch->getKey() != key)
-		return ":ircserv 475" + target + " :Cannot join channel (+k)";
+	if (!ch->getKey().empty() && (key.empty() || ch->getKey() != key))
+        return ":ircserv 475" + target + " :Cannot join channel (+k)";
 	if (ch->getLimit() > 0 && ch->getSize() >= ch->getLimit())
 		return ":ircserv 471" + target + " :Cannot join channel (+l)";
 	return "";
@@ -201,7 +214,7 @@ static std::string joinError(Channel *ch, Client *c, const std::string &key) {
 
 void Command::joinChannel(const std::string &name, const std::string &key, Client *c) {
 	const std::map<std::string, Channel*> &channels = this->_server.getChannel();
-	std::map<std::string, Channel*>::const_iterator it = channels.find(name);
+	std::map<std::string, Channel*>::const_iterator it = channels.find(lowerstring(name));
 
 	if (name.size() < 2 || name[0] != '#' || name.size() > 200 || name.find("^G") != std::string::npos) {
 		sendMsg(c, ":ircserv 403 " + c->getNick() + " " + name + " :No such channel");
@@ -209,7 +222,7 @@ void Command::joinChannel(const std::string &name, const std::string &key, Clien
 	}
 	if (it == channels.end()) {
 		Channel *newChannel = new Channel(name, c, key);
-		this->_server.addChannel(name, newChannel);
+		this->_server.addChannel(lowerstring(name), newChannel);
 		c->setNbChannels(1);
 		newChannel->returnJOIN(c);	
 		return;
@@ -229,6 +242,10 @@ void Command::joinChannel(const std::string &name, const std::string &key, Clien
 }
 
 void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
+	if (arg.size() != 2) {
+		sendMsg(c, ":ircserv 461 " + c->getNick() + " JOIN :Not enough parameters");
+		return;
+	}
 	std::string msg = arg.back();
 	arg.pop_back();
 
@@ -614,15 +631,15 @@ void	Command::cmdInvite(std::vector<std::string> arg, Client *c) {
 }
 
 void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
-	if (arg.size() != 2) {
+	if (arg.size() < 2 || arg.size() > 3) {
 		err_msg(461, "KICK :Not enough parameters", c);
 		return ;
 	}
-	std::string nickname = arg[1];
 	std::string channel_name = arg[0];
+	std::string nickname = arg[1];
 	std::string reason = "";
 	if (arg.size() == 3)
-		std::string reason = arg[3];
+		reason = arg[2];
 	Client *client = NULL;
 	Channel *channel;
 
@@ -640,7 +657,6 @@ void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
 		err_msg(401, nickname + " :No such nick/channel", c);
 		return ;
 	}
-
 	if (iter != serv_chan.end()) {
 		channel = iter->second;
 	} else {
@@ -661,9 +677,34 @@ void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
 	else 
 	msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv KICK " + channel_name + " " + nickname + " :" + reason + "\r\n";
 	send(client->getFd(), msg.c_str(), msg.length(), 0);
-	client->setNbChannels(-1);
+  client->setNbChannels(-1);
 	channel->removeClient(client);
 }
+
+void	Command::cmdPart(std::vector<std::string> arg, Client *c) {
+	if (arg.empty()) {
+		sendMsg(c, ":ircserv 461 " + c->getNick() + " PART :Not enough parameters");
+		return;
+	}
+	std::string channel_name = arg[0];
+	Channel* channel;
+	std::map<std::string, Channel*> serv_chan = this->_server.getChannel();
+	std::map<std::string, Channel*>::iterator iter = serv_chan.find(channel_name);
+
+	if (iter != serv_chan.end()) {
+		channel = iter->second;
+	} else {
+		err_msg(403, channel_name + " :No such channel", c);
+		return ;
+	}
+	if (!channel->inChannel(c)) {
+		err_msg(442, channel_name + " :You're not on that channel", c);
+		return ;
+	}
+	channel->removeClient(c);
+	channel->replyALL(":ircserv PART " + channel_name);
+}
+
 
 void Command::cmdQuit(std::vector<std::string> arg, Client *c) {
 	std::string reason = "Client Quit";

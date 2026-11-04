@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:35:36 by mcomin            #+#    #+#             */
-/*   Updated: 2026/09/28 04:03:25 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/04 03:33:20 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,4 +58,12 @@ size_t stringToSizeT(const std::string &str) {
 		return 0; 
 	}
 	return result;
+}
+
+std::string lowerstring(std::string s) {
+    std::string lowstring;
+    for (int i = 0; s[i] != '\0'; i++) {
+        lowstring += static_cast<char>(std::tolower(static_cast<unsigned char>(s[i])));
+    }
+    return lowstring;
 }

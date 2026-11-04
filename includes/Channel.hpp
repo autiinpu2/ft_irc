@@ -40,6 +40,7 @@ class Channel {
 		bool				_invite_only;
 		bool				_topic_op;
 		std::set<Client*>	_invited;
+		int					connected_clients;
 	public:
 		Channel(const std::string &n_channel, Client *c, const std::string key);
 		~Channel();

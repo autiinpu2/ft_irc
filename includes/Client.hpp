@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Client.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
+/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/21 23:20:13 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/08 00:15:11 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/04 02:01:17 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,7 @@ enum LOG_STATUS {
 
 class Client {
 	private:
+		std::string		buffer;
 		int 			_fd;
 		std::string 	_nickname;
 		std::string 	_username;
@@ -48,4 +49,7 @@ class Client {
 	void 				setUsername(std::string user);
 	void 				setRealname(std::string name);
 	void				setNbChannels(size_t nb);
+
+	std::string 		getbuffer();
+	void				setBuffer(std::string buff);
 };

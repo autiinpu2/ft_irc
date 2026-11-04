@@ -12,7 +12,7 @@
 
 #include "Client.hpp"
 
-Client::Client(int fd) : _fd(fd), _status(NONE) {
+Client::Client(int fd) : buffer(""), _fd(fd), _status(NONE) {
 	this->_nickname = "*";
 	if (fcntl(this->_fd, F_SETFL, O_NONBLOCK) == -1)
 		throw std::runtime_error("fcntl failed on client fd");
@@ -60,4 +60,12 @@ std::string Client::getUser(void) const {
 
 std::string Client::getRealname(void) const {
 	return this->_real_name;
+}
+
+std::string Client::getbuffer() {
+	return this->buffer;
+}
+
+void		Client::setBuffer(std::string buff) {
+	this->buffer = buff;
 }
