@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/04 05:24:46 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/04 06:01:10 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,11 +40,14 @@ void Command::handleCmd(const std::string &buffer, Client *c) {
 		if (!line.empty() && line[line.size() - 1] == '\r') {
 			line.erase(line.size() - 1);
 			c->setBuffer("");
-		} else {
+		} else if (!line.empty()) {
+			c->setBuffer("");
+		}
+		else {
 			c->setBuffer(line);
 			continue;
 		}
-
+		
 		std::string command;
 		std::vector<std::string> arg;
 		Parsing::parseLine(line, command, arg);
@@ -722,5 +725,8 @@ void Command::cmdQuit(std::vector<std::string> arg, Client *c) {
 			it->second->replyALL(msg);
 			c->setNbChannels(-1);
 		}
-	}	
+	}
+	std::vector<std::string>::iterator it = std::find(this->_server.getUsedNicks().begin(), this->_server.getUsedNicks().end(), lowerstring(c->getNick()));
+	if (it != this->_server.getUsedNicks().end())
+		this->_server.getUsedNicks().erase(it);
 }

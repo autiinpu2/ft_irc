@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/11/04 05:33:09 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/04 05:59:29 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,8 +133,16 @@ void Server::handleMsg(fd_set &rfds) {
 			std::cout <<"\033[1;31m[INFO] Client disconnected\033[0m" << std::endl;
 			std::cout << "\033[1;31m[INFO] FD: " << c->getFd() << ")\033[0m" << std::endl;
 			std::cout << "\033[1;31m[INFO] Remaining: " << this->getNbClient() << ")\033[0m" << std::endl;
-			
-			std::vector<std::string>::iterator it = std::find(this->_used_nicks.begin(), this->_used_nicks.end(), c->getNick());
+			std::map<std::string,Channel*> chs =  this->getChannel();
+			for (std::map<std::string,Channel*>::const_iterator it = chs.begin(); it != chs.end(); ++it) {
+				if (it->second->getClients().find(c->getNick()) != std::string::npos) {
+					it->second->removeClient(c);
+					std::string msg = ":" + c->getNick() + "!" + c->getUser() + "@ircserv QUIT :Client Quit\r\n";
+					it->second->replyALL(msg);
+					c->setNbChannels(-1);
+				}
+			}
+			std::vector<std::string>::iterator it = std::find(this->_used_nicks.begin(), this->_used_nicks.end(), lowerstring(c->getNick()));
 			if (it != this->_used_nicks.end())
 				this->_used_nicks.erase(it);
 			this->_clients.erase(this->_clients.begin() + i);
@@ -142,7 +150,7 @@ void Server::handleMsg(fd_set &rfds) {
 			--i;
 			continue;
 		}
-
+		
 		buffer[bytes_read] = '\0';
 		std::cout << "[DEBUG] Received: " << buffer << std::endl;
 		this->_command->handleCmd(buffer, c);
