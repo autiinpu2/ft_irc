@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Server.cpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/08 00:59:58 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/04 01:06:48 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,7 +107,8 @@ void Server::acceptNewClient(fd_set &rfds) {
 		Client *c = new Client(fd);
 		this->_clients.push_back(c);
 		this->setNbClient(1);
-		std::cout << "\033[1;32mNew client connected! (FD: " << fd << ")\033[0m" << std::endl;
+		std::cout <<"\033[1;31m[INFO] New client connected\033[0m" << std::endl;
+		std::cout << "\033[1;31m[INFO] FD: " << fd << ")\033[0m" << std::endl;
 	}
 	catch (std::runtime_error &e) {
 		std::cerr << e.what() << std::endl;
@@ -139,7 +140,7 @@ void Server::handleMsg(fd_set &rfds) {
 		}
 
 		buffer[bytes_read] = '\0';
-		std::cout << "\033[1;33mReceived: " << buffer << "\033[0m" << std::endl;
+		std::cout << "[DEBUG] Received: " << buffer << std::endl;
 		this->_command->handleCmd(buffer, c);
 	}
 }
@@ -147,7 +148,7 @@ void Server::handleMsg(fd_set &rfds) {
 int Server::serv_loop(void) {
 	signal(SIGINT, handle_signal);
 
-	std::cout << "\033[1;92mServer ON\n\033[0m" << std::endl;
+	std::cout << "\033[1;31m[INFO] Server ON\n\033[0m" << std::endl;
 	while (signalstatus != SIGINT) {
 		fd_set rfds = this->initFd();
 
@@ -161,6 +162,6 @@ int Server::serv_loop(void) {
 		this->acceptNewClient(rfds);
 		this->handleMsg(rfds);
 	}
-	std::cout << "\033[1;31m\nServer OFF\033[0m" << std::endl;
+	std::cout << "\033[1;31m\n[INFO] Server OFF\033[0m" << std::endl;
 	return 0;
 }

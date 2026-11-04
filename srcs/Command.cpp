@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/04 00:46:17 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/04 00:59:46 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -95,7 +95,7 @@ void Command::cmdPass(std::vector<std::string> arg, Client *c) {
 	}
 	if (arg[0] == this->_server.getPassword()) {
 		c->setStatus(PASSWORD);
-		std::cout << "\033[1;32mNew client logged!\033[0m" << std::endl;
+		std::cout <<"\033[1;31m[INFO] New client authenticated\033[0m" << std::endl;
 	}
 	else {
 		std::string msg = ":ircserv 464 * :Password incorrect\r\n";
