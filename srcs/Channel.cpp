@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 03:25:15 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/08 01:16:36 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/04 03:56:02 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,8 +15,7 @@
 #include "Client.hpp"
 
 Channel::Channel(const std::string &n_channel, Client *c, const std::string key) : _name(n_channel), _topic(""), _key(key), _limit(0), _invite_only(false), _topic_op(false) {
-	this->_clients.insert(c);
-	this->_operators.insert(c);
+	this->addClient(c);
 	this->_mode.insert('n');
 	this->_mode.insert('t');
 }
@@ -115,11 +114,16 @@ void Channel::uninvite(Client *c) {
 
 void Channel::addClient(Client *c) {
 	this->_clients.insert(c);
+	if (connected_clients <= 0) {
+		this->addOperator(c);
+	}
+	connected_clients++;
 }
 
 void Channel::removeClient(Client *c) {
 	this->_clients.erase(c);
 	this->_operators.erase(c);
+	connected_clients--;
 }
 
 bool Channel::inChannel(Client *c) const {

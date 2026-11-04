@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:37:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/03 07:08:01 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/04 03:43:36 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,6 +42,7 @@ class Command {
 		void	cmdPing(std::vector<std::string> arg, Client *c);
 		void	cmdMsg(std::vector<std::string> arg, Client *c);
 		
+		void	cmdPart(std::vector<std::string> arg, Client *c);
 		void	cmdKick(std::vector<std::string> arg, Client *c);
 		void	cmdInvite(std::vector<std::string> arg, Client *c);
 		void	cmdTopic(std::vector<std::string> arg, Client *c);

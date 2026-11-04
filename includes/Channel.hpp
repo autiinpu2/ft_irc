@@ -6,7 +6,7 @@
 /*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/23 02:15:39 by mcomin            #+#    #+#             */
-/*   Updated: 2026/10/06 03:10:01 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/04 03:53:05 by apuyane          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,6 +40,7 @@ class Channel {
 		bool				_invite_only;
 		bool				_topic_op;
 		std::set<Client*>	_invited;
+		int					connected_clients;
 	public:
 		Channel(const std::string &n_channel, Client *c, const std::string key);
 		~Channel();
