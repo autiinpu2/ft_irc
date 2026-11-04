@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/18 02:53:40 by mcomin            #+#    #+#             */
-/*   Updated: 2026/11/04 01:06:48 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/04 01:37:31 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -128,7 +128,9 @@ void Server::handleMsg(fd_set &rfds) {
 
 		if (bytes_read <= 0) {
 			this->setNbClient(-1);
-			std::cout << "\033[1;31mClient disconnected. (FD: " << c->getFd() << ") Remaining: " << this->getNbClient() << "\033[0m" << std::endl;
+			std::cout <<"\033[1;31m[INFO] Client disconnected\033[0m" << std::endl;
+			std::cout << "\033[1;31m[INFO] FD: " << c->getFd() << ")\033[0m" << std::endl;
+			std::cout << "\033[1;31m[INFO] Remaining: " << this->getNbClient() << ")\033[0m" << std::endl;
 			
 			std::vector<std::string>::iterator it = std::find(this->_used_nicks.begin(), this->_used_nicks.end(), c->getNick());
 			if (it != this->_used_nicks.end())
