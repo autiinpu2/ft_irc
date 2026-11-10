@@ -6,7 +6,7 @@
 /*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/10 21:25:12 by mcomin           ###   ########.fr       */
+/*   Updated: 2026/11/10 21:30:09 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -458,6 +458,7 @@ void	Command::cmdKick(std::vector<std::string> arg, Client *c) {
 	}
 	if (!channel->inChannel(client)) {
 		err_msg(441, nickname + " " + channel_name + " :They aren't on that channel", c);
+		return ;
 	}
 	if (!channel->inChannel(c)) {
 		err_msg(442, channel_name + " :You're not on that channel", c);
