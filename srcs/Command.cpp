@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Command.cpp                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: apuyane <apuyane@student.42angouleme.fr    +#+  +:+       +#+        */
+/*   By: mcomin <mcomin@student.42.fr>              +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/09/25 03:51:32 by mathys            #+#    #+#             */
-/*   Updated: 2026/11/04 06:06:27 by apuyane          ###   ########.fr       */
+/*   Updated: 2026/11/10 21:25:12 by mcomin           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -242,7 +242,7 @@ void Command::joinChannel(const std::string &name, const std::string &key, Clien
 
 void Command::cmdMsg(std::vector<std::string> arg, Client *c) {
 	if (arg.size() != 2) {
-		sendMsg(c, ":ircserv 461 " + c->getNick() + " JOIN :Not enough parameters");
+		sendMsg(c, ":ircserv 461 " + c->getNick() + " PRIVMSG :Not enough parameters");
 		return;
 	}
 	std::string msg = arg.back();
